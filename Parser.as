@@ -1,5 +1,5 @@
 ﻿
-package classes.Parser
+package classes.Parser.Main
 {
 	// import classes.CoC;
 
@@ -71,7 +71,7 @@ package classes.Parser
 		public var parserState:Object = new Object();
 
 		// provides singleArgConverters
-		include "./singleArgLookups.as";
+		include "../singleArgLookups.as";
 
 		// Does lookup of single argument tags ("[cock]", "[armor]", etc...) in singleArgConverters
 		// Supported variables are the options listed in the above
@@ -99,16 +99,10 @@ package classes.Parser
 			return argResult;
 		}
 
-		// provides rubiLookups and arianLookups
-		// note that these are only used in doubleArgLookups, not in Parser.as itself
-		//
-		// =!= NOTE: MUST BE IMPORTED BEFORE "./doubleArgLookups.as" =!=
-		// 
-		include "./npcLookups.as";
 
 		// provides twoWordNumericTagsLookup and twoWordTagsLookup, which use 
 		// cockLookups/cockHeadLookups, and rubiLookups/arianLookups respectively
-		include "./doubleArgLookups.as";
+		include "../doubleArgLookups.as";
 
 
 
@@ -179,7 +173,7 @@ package classes.Parser
 
 
 		// Provides the conditionalOptions object
-		include "./conditionalConverters.as";	
+		include "../conditionalConverters.as";	
 
 		// converts a single argument to a conditional to
 		// the relevant value, either by simply converting to a Number, or
@@ -535,6 +529,10 @@ package classes.Parser
 			{
 				if (sceneParserDebug) trace("Enter scene called to exit");
 				//doNextClear(debugPane);
+
+				// TODO:
+				// This needs to change to something else anyways. I need to add the ability to 
+				// tell the parser where to exit to at some point
 				_ownerClass.debugPane();
 				
 			}
@@ -565,7 +563,7 @@ package classes.Parser
 			{
 				if (sceneParserDebug) trace("Enter scene called with unknown arg \""+sceneName+"\". falling back to the debug pane");
 				_ownerClass.doNext(_ownerClass.debugPane);
-			}
+			
 			}
 			return tmp2
 
