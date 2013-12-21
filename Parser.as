@@ -13,6 +13,7 @@ package classes.Parser.Main
 		public var sceneParserDebug:Boolean = false;
 
 		public var mainParserDebug:Boolean = false;
+		public var lookupParserDebug:Boolean = false;
 		public var conditionalDebug:Boolean = false;
 		public var printCcntentDebug:Boolean = false;
 		public var printIntermediateParseStateDebug:Boolean = false;
@@ -84,18 +85,43 @@ package classes.Parser.Main
 		{
 			var argResult:String;
 			var capitalize:Boolean = isUpperCase(arg.charAt(0));
-			arg = arg.toLowerCase()
-			if (arg in singleArgConverters)
+
+			var argLower:String;
+			argLower = arg.toLowerCase()
+			if (argLower in singleArgConverters)
 			{
-				if (mainParserDebug) trace("Found corresponding anonymous function");
-				argResult = singleArgConverters[arg](this._ownerClass);
-				if (mainParserDebug) trace("Called, return = ", argResult);
+				if (lookupParserDebug) trace("Found corresponding anonymous function");
+				argResult = singleArgConverters[argLower](this._ownerClass);
+				
+				if (lookupParserDebug) trace("Called, return = ", argResult);
+
+				if (capitalize)
+					argResult = capitalizeFirstWord(argResult);
 			}
 			else
-				return "<b>!Unknown tag \"" + arg + "\"!</b>";
+			{
+				var obj:*;
+				obj = this.getObjectFromString(this._ownerClass, arg);
+				if (obj != null)
+				{
+					if (obj is Function)
+					{
+						if (lookupParserDebug) trace("Found corresponding function in owner class");
+						argResult = obj();
+					}
+					else
+					{
+						if (lookupParserDebug) trace("Found corresponding aspect in owner class");
+						argResult = String(obj);
+					}
+				}
+				else
+				{
+					if (lookupParserDebug) trace("No lookup found for", arg, " search result is: ", obj);
+					return "<b>!Unknown tag \"" + arg + "\"!</b>";
+				}
+			}
 
-			if (capitalize)
-				argResult = capitalizeFirstWord(argResult);
 			return argResult;
 		}
 
@@ -132,9 +158,9 @@ package classes.Parser.Main
 				{
 					aspect = Number(aspect);
 
-					if (mainParserDebug) trace("Found corresponding anonymous function");
+					if (lookupParserDebug) trace("Found corresponding anonymous function");
 					argResult = twoWordNumericTagsLookup[subject](this._ownerClass, aspect);
-					if (mainParserDebug) trace("Called, return = ", argResult);
+					if (lookupParserDebug) trace("Called, return = ", argResult);
 				}
 				else
 					return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Numeric Aspect = " + aspect + "\</b>";
@@ -147,9 +173,9 @@ package classes.Parser.Main
 					if (aspect in twoWordTagsLookup[subject])
 					{
 
-						if (mainParserDebug) trace("Found corresponding anonymous function");
+						if (lookupParserDebug) trace("Found corresponding anonymous function");
 						argResult = twoWordTagsLookup[subject][aspect](this._ownerClass);
-						if (mainParserDebug) trace("Called, return = ", argResult);
+						if (lookupParserDebug) trace("Called, return = ", argResult);
 					}
 					else
 						return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspect + "\"</b>";
@@ -457,10 +483,11 @@ package classes.Parser.Main
 		// Properly handles nested classes/objects, e.g. localThis.herp.derp
 		// is returned by getFuncFromString(localThis, "herp.derp");
 		// returns the relevant function if it exists, null if it does not.
-		private function getFuncFromString(localThis:Object, inStr:String):Function
+		private function getObjectFromString(localThis:Object, inStr:String):*
 		{
 			if (inStr in localThis)
 			{
+				if (lookupParserDebug) trace("item: ", inStr, " in: ", localThis);
 				return localThis[inStr];
 			}
 			
@@ -470,18 +497,18 @@ package classes.Parser.Main
 				var itemName:String;
 				localReference = inStr.substr(0, inStr.indexOf('.'));
 				itemName = inStr.substr(inStr.indexOf('.')+1);
-				if (sceneParserDebug) trace("localReference = ", localReference);
-				if (sceneParserDebug) trace("itemName = ", itemName);
-				if (sceneParserDebug) trace("localThis = ", localThis);
-				if (sceneParserDebug) trace("dereferenced = ", localThis[localReference]);
+				if (lookupParserDebug) trace("localReference = ", localReference);
+				if (lookupParserDebug) trace("itemName = ", itemName);
+				if (lookupParserDebug) trace("localThis = ", localThis);
+				if (lookupParserDebug) trace("dereferenced = ", localThis[localReference]);
 				
 				// If we have the localReference as a member of the localThis, call this function again to further for 
 				// the item itemName in localThis[localReference]
 				// This allows arbitrarily-nested data-structures, by recursing over the . structure in inStr
 				if (localReference in localThis)
 				{
-					if (sceneParserDebug) trace("have localReference:", localThis[localReference]);
-					return getFuncFromString(localThis[localReference], itemName);
+					if (lookupParserDebug) trace("have localReference:", localThis[localReference]);
+					return getObjectFromString(localThis[localReference], itemName);
 				}
 				else
 				{
@@ -490,6 +517,7 @@ package classes.Parser.Main
 
 			}
 			
+				if (lookupParserDebug) trace("item: ", inStr, " NOT in: ", localThis);
 			return null;
 
 		}
@@ -554,10 +582,10 @@ package classes.Parser.Main
 				//if (sceneParserDebug) trace("Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
 				if (sceneParserDebug) trace("Scene contents after markdown: \"" + tmp3 + "\"");
 			}
-			else if (this.getFuncFromString(_ownerClass, sceneName) != null)
+			else if (this.getObjectFromString(_ownerClass, sceneName) != null)
 			{
 				if (sceneParserDebug) trace("Have function \""+sceneName+"\" in this!. Calling.");
-				this.getFuncFromString(_ownerClass, sceneName)();
+				this.getObjectFromString(_ownerClass, sceneName)();
 			}
 			else
 			{
@@ -663,13 +691,13 @@ package classes.Parser.Main
 		{
 			
 			var retStr:String = "";
-			if (printCcntentDebug) trace("Evaluating string: ", textCtnt);
+			if (printCcntentDebug) trace("Parsing content string: ", textCtnt);
 
 
 			if (mainParserDebug) trace("Not an if statement")
 				// Match a single word, with no leading or trailing space
-			var singleWordTagRegExp:RegExp = /^\w+$/;
-			var doubleWordTagRegExp:RegExp = /^\w+\s\w+$/;
+			var singleWordTagRegExp:RegExp = /^[\w\.]+$/;
+			var doubleWordTagRegExp:RegExp = /^[\w\.]+\s[\w\.]+$/;
 
 			var singleWordExpRes:Object = singleWordTagRegExp.exec(textCtnt);
 			var doubleWordExpRes:Object = doubleWordTagRegExp.exec(textCtnt);
@@ -688,6 +716,7 @@ package classes.Parser.Main
 			}
 			else
 			{
+				if (mainParserDebug) trace("Cannot parse content. What?", textCtnt)
 				retStr += "<b>!Unknown multi-word tag \"" + retStr + "\"!</b>";
 			}
 		
@@ -786,7 +815,10 @@ package classes.Parser.Main
 						{
 							
 							if (tmpStr)
+							{
+								if (printCcntentDebug) trace("Parsing bracket contents = ", tmpStr);
 								retStr += parseNonIfStatement(recParser(tmpStr, depth), depth);
+							}
 						}
 
 						// First parse into the text in the brackets (to resolve any nested brackets)
@@ -824,7 +856,7 @@ package classes.Parser.Main
 			{
 				// DERP. We should never have brackets around something that ISN'T a tag intended to be parsed. Therefore, we just need
 				// to determine what type of parsing should be done do the tag.
-				if (printCcntentDebug) trace("No brackets present", textCtnt);
+				if (printCcntentDebug) trace("No brackets present in text passed to recParse", textCtnt);
 
 
 				retStr += textCtnt;
