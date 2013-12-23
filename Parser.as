@@ -889,6 +889,11 @@ package classes.Parser.Main
 			if (printIntermediateParseStateDebug) trace("Parser intermediate contents = ", ret)
 			// Currently, not parsing text as markdown by default because it's fucking with the line-endings.
 			
+
+			// Convert quotes to prettyQuotes
+			ret = this.makeQuotesPrettah(ret);
+			// Quote conversion has to go before markdown calls
+
 			if (parseAsMarkdown)
 			{
 				// trace("markdownificating");
@@ -904,6 +909,7 @@ package classes.Parser.Main
 			// cleanup escaped brackets
 			ret = ret.replace(/\\\]/g, "]")
 			ret = ret.replace(/\\\[/g, "[")
+
 
 			/*
 			for (var prop in this.parserState) 
@@ -939,7 +945,16 @@ package classes.Parser.Main
 
 		// Make shit look nice
 
-		// private function 
+		private function makeQuotesPrettah(inStr:String):String
+		{
+			
+			inStr = inStr.replace(/(^|[\r\n 	\.\!\,\?])'([\w<>\.\!\,\?])/g,		"$1\u2018$2")	// Opening singles
+			             .replace(/([\w<>\.\!\,\?])'([\r\n 	\.\!\,\?]|$)/g,		"$1\u2019$2")	// Closing singles
+			             .replace(/(^|[\r\n 	\.\!\,\?])"([\w<>\.\!\,\?])/g,		"$1\u201c$2")	// Opening doubles
+			             .replace(/([\w<>\.\!\,\?])"([\r\n 	\.\!\,\?]|$)/g,		"$1\u201d$2")	// Closing doubles
+			             .replace(/--/g,  "\u2014"); 						// em-dashes
+			return inStr;
+		}
 
 		// ---------------------------------------------------------------------------------------------------------------------------------------
 		// ---------------------------------------------------------------------------------------------------------------------------------------
