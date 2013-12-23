@@ -83,7 +83,7 @@ package classes.Parser.Main
 		// ALWAYS returns a string
 		public function convertSingleArg(arg:String):String
 		{
-			var argResult:String;
+			var argResult:String = null;
 			var capitalize:Boolean = isUpperCase(arg.charAt(0));
 
 			var argLower:String;
@@ -100,19 +100,35 @@ package classes.Parser.Main
 			}
 			else
 			{
+
+				// ---------------------------------------------------------------------------------
+				// TODO: Get rid of this shit.
+				// UGLY hack to patch legacy functionality in TiTS
+				// This needs to go eventually
+				
+				var descriptorArray:Array = arg.split(".");
+
+				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+				if (obj["getDescription"] != undefined && arg.indexOf(".") > 0)
+				{
+					return obj.getDescription(descriptorArray[1], "");
+				}
+				// end hack
+				// ---------------------------------------------------------------------------------
+
 				var obj:*;
 				obj = this.getObjectFromString(this._ownerClass, arg);
-				if (obj != null)
+				if (obj != null && argResult != null)
 				{
 					if (obj is Function)
 					{
 						if (lookupParserDebug) trace("Found corresponding function in owner class");
-						argResult = obj();
+						return obj();
 					}
 					else
 					{
 						if (lookupParserDebug) trace("Found corresponding aspect in owner class");
-						argResult = String(obj);
+						return String(obj); 	// explicit cast probably not needed
 					}
 				}
 				else
@@ -134,7 +150,9 @@ package classes.Parser.Main
 
 		public function convertDoubleArg(inputArg:String):String
 		{
-			var argResult:String;
+			var argResult:String = null;
+
+			var obj:*;
 
 			var argTemp:Array = inputArg.split(" ");
 			if (argTemp.length != 2)
@@ -151,41 +169,86 @@ package classes.Parser.Main
 			aspect = aspect.toLowerCase()
 
 			// Only perform lookup in twoWordNumericTagsLookup if aspect can be cast to a valid number
-			if (!isNaN(Number(aspect)))
-			{
 
-				if (subject in twoWordNumericTagsLookup)
+			if ((subject in twoWordNumericTagsLookup) && !isNaN(Number(aspect)))
+			{
+				aspect = Number(aspect);
+
+				if (lookupParserDebug) trace("Found corresponding anonymous function");
+				argResult = twoWordNumericTagsLookup[subject](this._ownerClass, aspect);
+				if (lookupParserDebug) trace("Called, return = ", argResult);
+			}
+
+			// aspect isn't a number. Look for subject in the normal twoWordTagsLookup
+			else if (subject in twoWordTagsLookup)
+			{
+				if (aspect in twoWordTagsLookup[subject])
 				{
-					aspect = Number(aspect);
 
 					if (lookupParserDebug) trace("Found corresponding anonymous function");
-					argResult = twoWordNumericTagsLookup[subject](this._ownerClass, aspect);
+					argResult = twoWordTagsLookup[subject][aspect](this._ownerClass);
 					if (lookupParserDebug) trace("Called, return = ", argResult);
 				}
 				else
-					return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Numeric Aspect = " + aspect + "\</b>";
+					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspect + "\"</b>";
+
 			}
-			// aspect isn't a number. Look for subject in the normal twoWordTagsLookup
-			else
+			else 
 			{
-				if (subject in twoWordTagsLookup)
+
+
+				trace("trying to look-up two-word tag in parent")
+				
+				// ---------------------------------------------------------------------------------
+				// TODO: Get rid of this shit.
+				// UGLY hack to patch legacy functionality in TiTS
+				// This needs to go eventually
+
+				var descriptorArray:Array = subject.split(".");
+
+				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+				if (obj["getDescription"] != undefined && subject.indexOf(".") > 0)
 				{
-					if (aspect in twoWordTagsLookup[subject])
-					{
-
-						if (lookupParserDebug) trace("Found corresponding anonymous function");
-						argResult = twoWordTagsLookup[subject][aspect](this._ownerClass);
-						if (lookupParserDebug) trace("Called, return = ", argResult);
+					if(argTemp.length > 1) {
+						argResult = obj.getDescription(descriptorArray[1], aspect);
 					}
-					else
-						return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspect + "\"</b>";
-
+					else {
+						argResult = obj.getDescription(descriptorArray[1], "");
+					}
 				}
-				else
-					return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", ASCII Aspect = " + aspect + "\</b>";
+				// end hack
+				// ---------------------------------------------------------------------------------
 
+				if (argResult == null)
+				{
+					obj = this.getObjectFromString(this._ownerClass, subject);
+					if (obj != null)
+					{
+						if (obj is Function)
+						{
+							if (lookupParserDebug) trace("Found corresponding function in owner class");
+							argResult = obj(aspect);
+						}
+						else
+						{
+							// This will work, but I don't know why you'd want to 
+							// the aspect is just ignored
+							if (lookupParserDebug) trace("Found corresponding aspect in owner class");
+							argResult = String(obj);
+						}
+					}
+				}
+
+				
 			}
 
+
+			if (argResult == null)
+			{
+				if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", obj);
+				return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
+				// return "<b>!Unknown tag \"" + arg + "\"!</b>";
+			}
 
 
 
@@ -499,7 +562,7 @@ package classes.Parser.Main
 				itemName = inStr.substr(inStr.indexOf('.')+1);
 				if (lookupParserDebug) trace("localReference = ", localReference);
 				if (lookupParserDebug) trace("itemName = ", itemName);
-				if (lookupParserDebug) trace("localThis = ", localThis);
+				if (lookupParserDebug) trace("localThis = \"", localThis, "\"");
 				if (lookupParserDebug) trace("dereferenced = ", localThis[localReference]);
 				
 				// If we have the localReference as a member of the localThis, call this function again to further for 
