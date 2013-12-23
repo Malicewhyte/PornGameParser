@@ -81,7 +81,7 @@ package classes.Parser.Main
 		// If the arg is not present in the singleArgConverters object, an error message is
 		// returned.
 		// ALWAYS returns a string
-		public function convertSingleArg(arg:String):String
+		private function convertSingleArg(arg:String):String
 		{
 			var argResult:String;
 			var capitalize:Boolean = isUpperCase(arg.charAt(0));
@@ -132,7 +132,7 @@ package classes.Parser.Main
 
 
 
-		public function convertDoubleArg(inputArg:String):String
+		private function convertDoubleArg(inputArg:String):String
 		{
 			var argResult:String;
 
@@ -206,7 +206,7 @@ package classes.Parser.Main
 		// through lookup in the above conditionalOptions oject, and then calling the
 		// relevant function
 		// Realistally, should only return either boolean or numbers.
-		public function convertConditionalArgumentFromStr(arg:String):*
+		private function convertConditionalArgumentFromStr(arg:String):*
 		{
 			// convert the string contents of a conditional argument into a meaningful variable.
 			arg = arg.toLowerCase()
@@ -238,7 +238,7 @@ package classes.Parser.Main
 		// Evaluates the conditional section of an if-statement.
 		// Does the proper parsing and look-up of any of the special nouns
 		// which can be present in the conditional
-		public function evalConditionalStatementStr(textCond:String):Boolean
+		private function evalConditionalStatementStr(textCond:String):Boolean
 		{
 			// Evaluates a conditional statement:
 			// (varArg1 [conditional] varArg2)
@@ -309,7 +309,7 @@ package classes.Parser.Main
 		// Splits the result from an if-statement.
 		// ALWAYS returns an array with two strings.
 		// if there is no else, the second string is empty.
-		public function splitConditionalResult(textCtnt:String): Array
+		private function splitConditionalResult(textCtnt:String): Array
 		{
 			// Splits the conditional section of an if-statemnt in to two results:
 			// [if (condition) OUTPUT_IF_TRUE]
@@ -376,7 +376,7 @@ package classes.Parser.Main
 		// Called to evaluate a if statment string, and return the evaluated result.
 		// Returns an empty string ("") if the conditional rvaluates to false, and there is no else
 		// option.
-		public function parseConditional(textCtnt:String, depth:int):String
+		private function parseConditional(textCtnt:String, depth:int):String
 		{
 			// NOTE: enclosing brackets are *not* included in the actual textCtnt string passed into this function
 			// they're shown in the below examples simply for clarity's sake.
@@ -526,7 +526,7 @@ package classes.Parser.Main
 		private var buttonNum:Number;
 
 
-		// TODO: Make failed scene button lookups work properly!
+		// TODO: Make failed scene button lookups fail in a debuggable manner!
 
 		// Parser button event handler
 		// This is the event bound to all button events, as well as the function called 
@@ -606,7 +606,7 @@ package classes.Parser.Main
 		// This gets placed in this.parserState so this.parserState["sceneName"] == "scene contents blaugh"
 		// 
 		// Note that parsing of the actual scene contents is deferred untill it's actually called for display.
-		public function parseSceneTag(textCtnt:String):void
+		private function parseSceneTag(textCtnt:String):void
 		{
 			var sceneName:String;
 			var sceneCont:String;
@@ -634,7 +634,7 @@ package classes.Parser.Main
 		// and "Button Name" is the text that will be shown on the button.
 		// Note that the function name cannot contain spaces (actionscript requires this), and is case-sensitive
 		// "Button name" can contain arbitrary spaces or characters, excepting "]", "[" and "|"
-		public function parseButtonTag(textCtnt:String):void
+		private function parseButtonTag(textCtnt:String):void
 		{
 			// TODO: Allow button positioning!
 			var arr:Array;
@@ -655,7 +655,7 @@ package classes.Parser.Main
 		// pushes the contents of the passed string into the scene list object if it's a scene, or instantiates the named button if it's a button
 		// command and returns an empty string.
 		// if the contents are not a button or scene contents, returns the contents.
-		public function evalForSceneControls(textCtnt:String):String
+		private function evalForSceneControls(textCtnt:String):String
 		{
 
 
@@ -676,7 +676,7 @@ package classes.Parser.Main
 		}
 
 
-		public function isIfStatement(textCtnt:String):Boolean
+		private function isIfStatement(textCtnt:String):Boolean
 		{
 			if (textCtnt.toLowerCase().indexOf("if") == 0)
 				return true;
@@ -687,7 +687,7 @@ package classes.Parser.Main
 		// Called to determine if the contents of a bracket are a parseable statement or not
 		// If the contents *are* a parseable, it calls the relevant function to evaluate it
 		// if not, it simply returns the contents as passed
-		public function parseNonIfStatement(textCtnt:String, depth:int):String
+		private function parseNonIfStatement(textCtnt:String, depth:int):String
 		{
 			
 			var retStr:String = "";
@@ -729,7 +729,7 @@ package classes.Parser.Main
 		// Actual internal parser function.
 		// textCtnt is the text you want parsed, depth is a number that reflects the current recursion depth
 		// You pass in the string you want parsed, and the parsed result is returned as a string.
-		public function recParser(textCtnt:String, depth:Number):String
+		private function recParser(textCtnt:String, depth:Number):String
 		{
 			if (mainParserDebug) trace("Recursion call", depth, "---------------------------------------------+++++++++++++++++++++")
 			if (printIntermediateParseStateDebug) trace("Parsing contents = ", textCtnt)
@@ -932,6 +932,14 @@ package classes.Parser.Main
 			return ret
 
 		}
+
+		// ---------------------------------------------------------------------------------------------------------------------------------------
+		// ---------------------------------------------------------------------------------------------------------------------------------------
+		// ---------------------------------------------------------------------------------------------------------------------------------------
+
+		// Make shit look nice
+
+		// private function 
 
 		// ---------------------------------------------------------------------------------------------------------------------------------------
 		// ---------------------------------------------------------------------------------------------------------------------------------------
