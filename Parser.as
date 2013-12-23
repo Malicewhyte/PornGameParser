@@ -109,7 +109,7 @@ package classes.Parser.Main
 				var descriptorArray:Array = arg.split(".");
 
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
-				if (obj["getDescription"] != undefined && arg.indexOf(".") > 0)
+				if (obj.hasOwnProperty("getDescription") && arg.indexOf(".") > 0)
 				{
 					return obj.getDescription(descriptorArray[1], "");
 				}
@@ -207,7 +207,7 @@ package classes.Parser.Main
 				var descriptorArray:Array = subject.split(".");
 
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
-				if (obj["getDescription"] != undefined && subject.indexOf(".") > 0)
+				if (obj.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
 				{
 					if(argTemp.length > 1) {
 						argResult = obj.getDescription(descriptorArray[1], aspect);
