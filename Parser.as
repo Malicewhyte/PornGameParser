@@ -910,6 +910,9 @@ package classes.Parser.Main
 			ret = ret.replace(/\\\]/g, "]")
 			ret = ret.replace(/\\\[/g, "[")
 
+			// And repeated spaces (this has to be done after markdown processing)
+			ret = ret.replace(/  +/g, " ");
+
 
 			/*
 			for (var prop in this.parserState) 
@@ -948,13 +951,14 @@ package classes.Parser.Main
 		private function makeQuotesPrettah(inStr:String):String
 		{
 			
-			inStr = inStr.replace(/(^|[\r\n 	\.\!\,\?])'([\w<>\.\!\,\?])/g,		"$1\u2018$2")	// Opening singles
+			inStr = inStr.replace(/(^|[\r\n 	\.\!\,\?])'([\w<>\.\!\,\?])/g,	"$1\u2018$2")	// Opening singles
 			             .replace(/([\w<>\.\!\,\?])'([\r\n 	\.\!\,\?]|$)/g,		"$1\u2019$2")	// Closing singles
-			             .replace(/(^|[\r\n 	\.\!\,\?])"([\w<>\.\!\,\?])/g,		"$1\u201c$2")	// Opening doubles
+			             .replace(/(^|[\r\n 	\.\!\,\?])"([\w<>\.\!\,\?])/g,	"$1\u201c$2")	// Opening doubles
 			             .replace(/([\w<>\.\!\,\?])"([\r\n 	\.\!\,\?]|$)/g,		"$1\u201d$2")	// Closing doubles
-			             .replace(/--/g,  "\u2014"); 						// em-dashes
+			             .replace(/--/g,  										"\u2014");		// em-dashes
 			return inStr;
 		}
+		
 
 		// ---------------------------------------------------------------------------------------------------------------------------------------
 		// ---------------------------------------------------------------------------------------------------------------------------------------
