@@ -1024,11 +1024,10 @@ package classes.Parser.Main
 		private function makeQuotesPrettah(inStr:String):String
 		{
 			
-			inStr = inStr.replace(/(^|[\r\n 	\.\!\,\?])'([\w<>\.\!\,\?])/g,	"$1\u2018$2")	// Opening singles
-			             .replace(/([\w<>\.\!\,\?])'([\r\n 	\.\!\,\?]|$)/g,		"$1\u2019$2")	// Closing singles
-			             .replace(/(^|[\r\n 	\.\!\,\?])"([\w<>\.\!\,\?])/g,	"$1\u201c$2")	// Opening doubles
-			             .replace(/([\w<>\.\!\,\?])"([\r\n 	\.\!\,\?]|$)/g,		"$1\u201d$2")	// Closing doubles
-			             .replace(/--/g,  										"\u2014");		// em-dashes
+			inStr = inStr.replace(/(\w)'(\w)/g,										"$1\u2019$2")	// Apostrophes
+			             .replace(/(^|[\r\n 	\.\!\,\?])"([a-zA-Z<>\.\!\,\?])/g,	"$1\u201c$2")	// Opening doubles
+			             .replace(/([a-zA-Z<>\.\!\,\?])"([\r\n 	\.\!\,\?]|$)/g,		"$1\u201d$2")	// Closing doubles
+			             .replace(/--/g,  											"\u2014");		// em-dashes
 			return inStr;
 		}
 		
