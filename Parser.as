@@ -109,6 +109,10 @@ package classes.Parser.Main
 				var descriptorArray:Array = arg.split(".");
 
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+				if (obj == null)		// Completely bad tag
+				{
+					return "<b>!Unknown subject in \"" + arg + "\"!</b>";
+				}
 				if (obj.hasOwnProperty("getDescription") && arg.indexOf(".") > 0)
 				{
 					return obj.getDescription(descriptorArray[1], "");
@@ -207,6 +211,10 @@ package classes.Parser.Main
 				var descriptorArray:Array = subject.split(".");
 
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+				if (obj == null)		// Completely bad tag
+				{
+					return "<b>!Unknown subject in \"" + inputArg + "\"!</b>";
+				}
 				if (obj.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
 				{
 					if(argTemp.length > 1) {
