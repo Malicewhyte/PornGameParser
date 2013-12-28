@@ -934,7 +934,7 @@ package classes.Parser.Main
 		// textCtnt is the text you want parsed, depth is a number, which should be 0
 		// or not passed at all.
 		// You pass in the string you want parsed, and the parsed result is returned as a string.
-		public function recursiveParser(contents:String, parseAsMarkdown:Boolean = false):String
+		public function recursiveParser(contents:String, parseAsMarkdown:Boolean = false, prettyQuotes:Boolean=true):String
 		{
 			if (mainParserDebug) trace("------------------ Parser called on string -----------------------");
 			// Eventually, when this goes properly class-based, we'll add a period, and have this.parserState.
@@ -952,11 +952,13 @@ package classes.Parser.Main
 			if (printIntermediateParseStateDebug) trace("Parser intermediate contents = ", ret)
 			// Currently, not parsing text as markdown by default because it's fucking with the line-endings.
 			
-
-			// Convert quotes to prettyQuotes
-			ret = this.makeQuotesPrettah(ret);
-			// Quote conversion has to go before markdown calls
-
+			if (prettyQuotes)
+			{
+				// Convert quotes to prettyQuotes
+				ret = this.makeQuotesPrettah(ret);
+				// Quote conversion has to go before markdown calls
+			}
+			
 			if (parseAsMarkdown)
 			{
 				// trace("markdownificating");
