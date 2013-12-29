@@ -630,6 +630,58 @@ package classes.Parser.Main
 		}
 
 
+
+		private function getSceneSectionToInsert(inputArg:String):String
+		{
+			var argResult:String = null;
+
+			var obj:*;
+
+			var argTemp:Array = inputArg.split(" ");
+			if (argTemp.length != 2)
+			{
+				return "<b>!Not actually a valid insertSection tag:!\"" + inputArg + "\"!</b>";
+			}
+			var callName:String = argTemp[0];
+			var sceneName:* = argTemp[1];
+			var callNameLower:String = argTemp[0].toLowerCase();
+
+			if (sceneParserDebug) trace("Doing lookup for sceneSection tag:", callName, " scene name: ", sceneName);
+
+			// this should have been checked before calling.
+			if (callNameLower != "insertsection")
+				throw new Error("Wat?");
+
+
+
+			if (sceneName in this.parserState)
+			{	
+				if (sceneParserDebug) trace("Have sceneSection \""+sceneName+"\". Parsing and setting up menu");
+				
+				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
+
+				// Split up into multiple variables for debugging (it was crashing at one point)
+				var tmp1:String = this.parserState[sceneName];
+				var tmp2:String = recParser(tmp1, 0);		// we have to actually parse the scene now
+				var tmp3:String = Showdown.makeHtml(tmp2)
+
+				
+
+				return tmp3;			// and then stick it on the display
+
+				//if (sceneParserDebug) trace("Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
+			}
+			else
+			{
+				return "Insert sceneSection called with unknown arg \""+sceneName+"\". falling back to the debug pane";
+			
+			}
+		}
+
+
+
+
+
 		private var buttonNum:Number;
 
 
@@ -811,7 +863,13 @@ package classes.Parser.Main
 
 			if (mainParserDebug) trace("Checking if single word = [" + singleWordExpRes + "]", getQualifiedClassName(singleWordExpRes));
 			if (mainParserDebug) trace("string length = ", textCtnt.length);
-			if (singleWordExpRes)
+
+			if (textCtnt.toLowerCase().indexOf("insertsection") == 0)
+			{
+				if (sceneParserDebug) trace("It's a scene section insert tag!");
+				retStr = this.getSceneSectionToInsert(textCtnt)
+			}
+			else if (singleWordExpRes)
 			{
 				if (mainParserDebug) trace("It's a single word!");
 				retStr += convertSingleArg(textCtnt);
