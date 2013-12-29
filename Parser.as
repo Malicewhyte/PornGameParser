@@ -16,6 +16,7 @@ package classes.Parser.Main
 		public var lookupParserDebug:Boolean = false;
 		public var conditionalDebug:Boolean = false;
 		public var printCcntentDebug:Boolean = false;
+		public var printConditionalEvalDebug:Boolean = false;
 		public var printIntermediateParseStateDebug:Boolean = false;
 
 
@@ -285,7 +286,7 @@ package classes.Parser.Main
 		private function convertConditionalArgumentFromStr(arg:String):*
 		{
 			// convert the string contents of a conditional argument into a meaningful variable.
-			arg = arg.toLowerCase()
+			var argLower:* = arg.toLowerCase()
 			var argResult:* = 0;
 
 			// Note: Case options MUST be ENTIRELY lower case. The comparaison string is converted to
@@ -294,19 +295,48 @@ package classes.Parser.Main
 			// Try to cast to a number. If it fails, go on with the switch/case statement.
 			if (!isNaN(Number(arg)))
 			{
-				if (mainParserDebug) trace("Converted to float. Number = ", Number(arg))
+				if (printConditionalEvalDebug) trace("Converted to float. Number = ", Number(arg))
 				return Number(arg);
 			}
-
-			if (arg in conditionalOptions)
+			else if (argLower in conditionalOptions)
 			{
-				if (mainParserDebug) trace("Found corresponding anonymous function");
-				argResult = conditionalOptions[arg](this._ownerClass);
-				if (mainParserDebug) trace("Called, return = ", argResult);
+				if (printConditionalEvalDebug) trace("Found corresponding anonymous function");
+				argResult = conditionalOptions[argLower](this._ownerClass);
+				if (printConditionalEvalDebug) trace("Called, return = ", argResult);
+				return argResult;
+			}
+			else
+			{
 
+				var obj:*;
+				obj = this.getObjectFromString(this._ownerClass, arg);
+
+				if (printConditionalEvalDebug) trace("Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
+				if (obj != null)
+				{
+					if (printConditionalEvalDebug) trace("Found corresponding function for conditional argument lookup.");
+
+					if (obj is Function)
+					{
+						if (printConditionalEvalDebug) trace("Found corresponding function in owner class");
+						argResult = Number(obj());
+						return argResult;
+					}
+					else
+					{
+						if (printConditionalEvalDebug) trace("Found corresponding aspect in owner class");
+						argResult = Number(obj);
+						return argResult;
+					}
+				}
+				else
+				{
+					if (printConditionalEvalDebug) trace("No lookups found!");
+				}
+				
 			}
 
-			if (mainParserDebug) trace("Could not convert to float. Evaluated ", arg, " as", argResult)
+			if (printConditionalEvalDebug) trace("Could not convert to float. Evaluated ", arg, " as", argResult)
 			return argResult;
 		}
 
@@ -333,14 +363,14 @@ package classes.Parser.Main
 			// and not supported at this time.
 
 
-			var isExp:RegExp = /(\w+)\s?(==|=|!=|<|>|<=|>=)\s?(\w+)/;
+			var isExp:RegExp = /([\w\.]+)\s?(==|=|!=|<|>|<=|>=)\s?([\w\.]+)/;
 			var expressionResult:Object = isExp.exec(textCond);
 			if (!expressionResult)
 			{
-				if (mainParserDebug) trace("Invalid conditional!")
+				if (printConditionalEvalDebug) trace("Invalid conditional!")
 				return false
 			}
-			if (mainParserDebug) trace("Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
+			if (printConditionalEvalDebug) trace("Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
 
 			var condArgStr1:String;
 			var condArgStr2:String;
@@ -377,7 +407,7 @@ package classes.Parser.Main
 				retVal = (condArg1 != condArg2);
 
 
-			if (mainParserDebug) trace("Check: " + condArg1 + " " + operator + " " + condArg2 + " result: " + retVal);
+			if (printConditionalEvalDebug) trace("Check: " + condArg1 + " " + operator + " " + condArg2 + " result: " + retVal);
 
 			return retVal;
 		}
