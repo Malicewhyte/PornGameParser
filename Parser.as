@@ -97,6 +97,8 @@ package classes.Parser.Main
 
 				if (capitalize)
 					argResult = capitalizeFirstWord(argResult);
+				
+				return argResult;
 			}
 			else
 			{
@@ -120,9 +122,11 @@ package classes.Parser.Main
 				// end hack
 				// ---------------------------------------------------------------------------------
 
+				
+				if (lookupParserDebug) trace("Lookup Arg = ", arg);
 				var obj:*;
 				obj = this.getObjectFromString(this._ownerClass, arg);
-				if (obj != null && argResult != null)
+				if (obj != null)
 				{
 					if (obj is Function)
 					{
@@ -142,7 +146,6 @@ package classes.Parser.Main
 				}
 			}
 
-			return argResult;
 		}
 
 
@@ -163,38 +166,40 @@ package classes.Parser.Main
 			{
 				argResult = "<b>!Not actually a two-word tag!\"" + inputArg + "\"!</b>"
 			}
-			var subject:* = argTemp[0];
+			var subject:String = argTemp[0];
 			var aspect:* = argTemp[1];
+			var subjectLower:String = argTemp[0].toLowerCase();
+			var aspectLower:* = argTemp[1].toLowerCase();
+
+			if (lookupParserDebug) trace("Doing lookup for subject", subject, " aspect ", aspect);
 
 			// Figure out if we need to capitalize the resulting text
 			var capitalize:Boolean = isUpperCase(aspect.charAt(0));
 
-			subject = subject.toLowerCase()
-			aspect = aspect.toLowerCase()
 
 			// Only perform lookup in twoWordNumericTagsLookup if aspect can be cast to a valid number
 
-			if ((subject in twoWordNumericTagsLookup) && !isNaN(Number(aspect)))
+			if ((subjectLower in twoWordNumericTagsLookup) && !isNaN(Number(aspect)))
 			{
-				aspect = Number(aspect);
+				aspectLower = Number(aspectLower);
 
 				if (lookupParserDebug) trace("Found corresponding anonymous function");
-				argResult = twoWordNumericTagsLookup[subject](this._ownerClass, aspect);
+				argResult = twoWordNumericTagsLookup[subjectLower](this._ownerClass, aspectLower);
 				if (lookupParserDebug) trace("Called, return = ", argResult);
 			}
 
 			// aspect isn't a number. Look for subject in the normal twoWordTagsLookup
-			else if (subject in twoWordTagsLookup)
+			else if (subjectLower in twoWordTagsLookup)
 			{
-				if (aspect in twoWordTagsLookup[subject])
+				if (aspectLower in twoWordTagsLookup[subjectLower])
 				{
 
 					if (lookupParserDebug) trace("Found corresponding anonymous function");
-					argResult = twoWordTagsLookup[subject][aspect](this._ownerClass);
+					argResult = twoWordTagsLookup[subjectLower][aspectLower](this._ownerClass);
 					if (lookupParserDebug) trace("Called, return = ", argResult);
 				}
 				else
-					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspect + "\"</b>";
+					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspectLower + "\"</b>";
 
 			}
 			else 
@@ -588,7 +593,8 @@ package classes.Parser.Main
 
 			}
 			
-				if (lookupParserDebug) trace("item: ", inStr, " NOT in: ", localThis);
+			if (lookupParserDebug) trace("item: ", inStr, " NOT in: ", localThis);
+
 			return null;
 
 		}
