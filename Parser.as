@@ -165,7 +165,7 @@ package classes.Parser.Main
 			var argTemp:Array = inputArg.split(" ");
 			if (argTemp.length != 2)
 			{
-				argResult = "<b>!Not actually a two-word tag!\"" + inputArg + "\"!</b>"
+				return "<b>!Not actually a two-word tag!\"" + inputArg + "\"!</b>"
 			}
 			var subject:String = argTemp[0];
 			var aspect:* = argTemp[1];
@@ -186,88 +186,81 @@ package classes.Parser.Main
 
 				if (lookupParserDebug) trace("Found corresponding anonymous function");
 				argResult = twoWordNumericTagsLookup[subjectLower](this._ownerClass, aspectLower);
-				if (lookupParserDebug) trace("Called, return = ", argResult);
+				if (capitalize)
+					argResult = capitalizeFirstWord(argResult);
+				if (lookupParserDebug) trace("Called two word numeric lookup, return = ", argResult);
+				return argResult;
 			}
 
 			// aspect isn't a number. Look for subject in the normal twoWordTagsLookup
-			else if (subjectLower in twoWordTagsLookup)
+			if (subjectLower in twoWordTagsLookup)
 			{
 				if (aspectLower in twoWordTagsLookup[subjectLower])
 				{
 
 					if (lookupParserDebug) trace("Found corresponding anonymous function");
 					argResult = twoWordTagsLookup[subjectLower][aspectLower](this._ownerClass);
-					if (lookupParserDebug) trace("Called, return = ", argResult);
+					if (capitalize)
+						argResult = capitalizeFirstWord(argResult);
+					if (lookupParserDebug) trace("Called two word lookup, return = ", argResult);
+					return argResult;
 				}
 				else
 					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspectLower + "\"</b>";
 
 			}
-			else 
+		
+
+
+			if (lookupParserDebug) trace("trying to look-up two-word tag in parent")
+			
+			// ---------------------------------------------------------------------------------
+			// TODO: Get rid of this shit.
+			// UGLY hack to patch legacy functionality in TiTS
+			// This needs to go eventually
+
+			var descriptorArray:Array = subject.split(".");
+
+			obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+			if (obj == null)		// Completely bad tag
 			{
-
-
-				trace("trying to look-up two-word tag in parent")
-				
-				// ---------------------------------------------------------------------------------
-				// TODO: Get rid of this shit.
-				// UGLY hack to patch legacy functionality in TiTS
-				// This needs to go eventually
-
-				var descriptorArray:Array = subject.split(".");
-
-				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
-				if (obj == null)		// Completely bad tag
-				{
-					return "<b>!Unknown subject in \"" + inputArg + "\"!</b>";
+				return "<b>!Unknown subject in \"" + inputArg + "\"!</b>";
+			}
+			if (obj.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
+			{
+				if(argTemp.length > 1) {
+					return obj.getDescription(descriptorArray[1], aspect);
 				}
-				if (obj.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
-				{
-					if(argTemp.length > 1) {
-						argResult = obj.getDescription(descriptorArray[1], aspect);
-					}
-					else {
-						argResult = obj.getDescription(descriptorArray[1], "");
-					}
+				else {
+					return obj.getDescription(descriptorArray[1], "");
 				}
-				// end hack
-				// ---------------------------------------------------------------------------------
+			}
+			// end hack
+			// ---------------------------------------------------------------------------------
 
-				if (argResult == null)
+			if (obj != null)
+			{
+				if (obj is Function)
 				{
-					obj = this.getObjectFromString(this._ownerClass, subject);
-					if (obj != null)
-					{
-						if (obj is Function)
-						{
-							if (lookupParserDebug) trace("Found corresponding function in owner class");
-							argResult = obj(aspect);
-						}
-						else
-						{
-							// This will work, but I don't know why you'd want to 
-							// the aspect is just ignored
-							if (lookupParserDebug) trace("Found corresponding aspect in owner class");
-							argResult = String(obj);
-						}
-					}
+					if (lookupParserDebug) trace("Found corresponding function in owner class");
+					return obj(aspect);
 				}
-
-				
+				else
+				{
+					// This will work, but I don't know why you'd want to 
+					// the aspect is just ignored
+					if (lookupParserDebug) trace("Found corresponding aspect in owner class");
+					return String(obj);
+				}
 			}
 
-
-			if (argResult == null)
-			{
-				if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", obj);
-				return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
-				// return "<b>!Unknown tag \"" + arg + "\"!</b>";
-			}
+			
 
 
-
-			if (capitalize)
-				argResult = capitalizeFirstWord(argResult);
+			if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", obj);
+			return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
+			// return "<b>!Unknown tag \"" + arg + "\"!</b>";
+			
 			return argResult;
 		}
 
@@ -287,7 +280,7 @@ package classes.Parser.Main
 		{
 			// convert the string contents of a conditional argument into a meaningful variable.
 			var argLower:* = arg.toLowerCase()
-			var argResult:* = 0;
+			var argResult:* = -1;
 
 			// Note: Case options MUST be ENTIRELY lower case. The comparaison string is converted to
 			// lower case before the switch:case section
@@ -298,45 +291,42 @@ package classes.Parser.Main
 				if (printConditionalEvalDebug) trace("Converted to float. Number = ", Number(arg))
 				return Number(arg);
 			}
-			else if (argLower in conditionalOptions)
+			if (argLower in conditionalOptions)
 			{
 				if (printConditionalEvalDebug) trace("Found corresponding anonymous function");
 				argResult = conditionalOptions[argLower](this._ownerClass);
 				if (printConditionalEvalDebug) trace("Called, return = ", argResult);
 				return argResult;
 			}
-			else
+			
+			
+			var obj:* = this.getObjectFromString(this._ownerClass, arg);
+
+			if (printConditionalEvalDebug) trace("Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
+			if (obj != null)
 			{
+				if (printConditionalEvalDebug) trace("Found corresponding function for conditional argument lookup.");
 
-				var obj:*;
-				obj = this.getObjectFromString(this._ownerClass, arg);
-
-				if (printConditionalEvalDebug) trace("Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
-				if (obj != null)
+				if (obj is Function)
 				{
-					if (printConditionalEvalDebug) trace("Found corresponding function for conditional argument lookup.");
-
-					if (obj is Function)
-					{
-						if (printConditionalEvalDebug) trace("Found corresponding function in owner class");
-						argResult = Number(obj());
-						return argResult;
-					}
-					else
-					{
-						if (printConditionalEvalDebug) trace("Found corresponding aspect in owner class");
-						argResult = Number(obj);
-						return argResult;
-					}
+					if (printConditionalEvalDebug) trace("Found corresponding function in owner class");
+					argResult = Number(obj());
+					return argResult;
 				}
 				else
 				{
-					if (printConditionalEvalDebug) trace("No lookups found!");
+					if (printConditionalEvalDebug) trace("Found corresponding aspect in owner class");
+					argResult = Number(obj);
+					return argResult;
 				}
-				
 			}
+			else
+			{
+				if (printConditionalEvalDebug) trace("No lookups found!");
+			}
+			
 
-			if (printConditionalEvalDebug) trace("Could not convert to float. Evaluated ", arg, " as", argResult)
+			if (printConditionalEvalDebug) trace("Could not convert to number. Evaluated ", arg, " as", argResult)
 			return argResult;
 		}
 
@@ -372,21 +362,14 @@ package classes.Parser.Main
 			}
 			if (printConditionalEvalDebug) trace("Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
 
-			var condArgStr1:String;
-			var condArgStr2:String;
-			var operator:String;
-
-			condArgStr1 	= expressionResult[1];
-			operator 		= expressionResult[2];
-			condArgStr2 	= expressionResult[3];
+			var condArgStr1:String    = expressionResult[1];
+			var operator:String       = expressionResult[2];
+			var condArgStr2:String    = expressionResult[3];
 
 			var retVal:Boolean = false;
 
-			var condArg1:*;
-			var condArg2:*;
-
-			condArg1 = convertConditionalArgumentFromStr(condArgStr1);
-			condArg2 = convertConditionalArgumentFromStr(condArgStr2);
+			var condArg1:* = convertConditionalArgumentFromStr(condArgStr1);
+			var condArg2:* = convertConditionalArgumentFromStr(condArgStr2);
 
 			//Perform check
 			if(operator == "=")
@@ -425,7 +408,7 @@ package classes.Parser.Main
 			// If there is no OUTPUT_IF_FALSE, returns an empty string for the second option.
 			if (conditionalDebug) trace("------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
 			if (conditionalDebug) trace("Split Conditional input string: ", textCtnt)
-			if (conditionalDebug) trace("------------------3333333333333333333333333333333333333333333333333333333333-----------------------")
+			if (conditionalDebug) trace("------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
 
 
 			var ret:Array = new Array("", "");
@@ -439,24 +422,36 @@ package classes.Parser.Main
 
 			for (i = 0; i < textCtnt.length; i += 1)
 			{
-				if (textCtnt.charAt(i) == "[")
-					nestLevel += 1;
-				else if (textCtnt.charAt(i) == "]")
-					nestLevel -= 1;
-				else if ((textCtnt.charAt(i) == "|") && (nestLevel == 0))
+				switch (textCtnt.charAt(i))
 				{
-					if (section == 1) // barf if we hit a second "|" that's not in brackets
-					{
-						if (this._settingsClass.haltOnErrors) throw new Error("Nested IF statements still a WIP")
-						ret = ["<b>Error! Too many options in if statement!</b>",
-							"<b>Error! Too many options in if statement!</b>"];
-					}
-					else
-					{
-						ret[section] = textCtnt.substring(sectionStart, i);
-						sectionStart = i + 1
-						section += 1
-					}
+					case "[":    //Statement is nested one level deeper
+						nestLevel += 1;
+						break;
+
+					case "]":    //exited one level of nesting.
+						nestLevel -= 1;
+						break;
+
+					case "|":                  // At a conditional split
+						if (nestLevel == 0)   // conditional split is only valid in this context if we're not in a nested bracket.
+						{
+							if (section == 1)  // barf if we hit a second "|" that's not in brackets
+							{
+								if (this._settingsClass.haltOnErrors) throw new Error("Nested IF statements still a WIP")
+								ret = ["<b>Error! Too many options in if statement!</b>",
+									"<b>Error! Too many options in if statement!</b>"];
+							}
+							else
+							{
+								ret[section] = textCtnt.substring(sectionStart, i);
+								sectionStart = i + 1
+								section += 1
+							}
+						}
+						break;
+
+					default:
+						break;
 				}
 
 			}
@@ -465,17 +460,10 @@ package classes.Parser.Main
 
 			if (conditionalDebug) trace("------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
 			if (conditionalDebug) trace("Outputs: ", ret)
-			if (conditionalDebug) trace("------------------6666666666666666666666666666666666666666666666666666666666-----------------------")
+			if (conditionalDebug) trace("------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
 
 			return ret;
 		}
-
-		private function splitConditionalContents(textCtnt:String):String
-		{
-			var ret:Array = new Array("", "")
-			return "";
-		}
-		
 		
 		
 
@@ -512,24 +500,23 @@ package classes.Parser.Main
 
 			if (conditionalDebug) trace("------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
 			if (conditionalDebug) trace("If input string: ", textCtnt)
-			if (conditionalDebug) trace("------------------1111111111111111111111111111111111111111111111111111111111-----------------------")
+			if (conditionalDebug) trace("------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
 
 
 			var ret:Array = new Array("", "", "");	// first string is conditional, second string is the output
 
 			var i:Number = 0;
-			var tmp:Number = 0;
 			var parenthesisCount:Number = 0;
 
 			//var ifText;
 			var conditional:*;
 			var output:*;
 
-			tmp = textCtnt.indexOf("(");
+			var condStart:Number = textCtnt.indexOf("(");
 
-			if (tmp != -1)		// If we have any open parenthesis
+			if (condStart != -1)		// If we have any open parenthesis
 			{
-				for (i = tmp; i < textCtnt.length; i += 1)
+				for (i = condStart; i < textCtnt.length; i += 1)
 				{
 					if (textCtnt.charAt(i) == "(")
 					{
@@ -539,13 +526,10 @@ package classes.Parser.Main
 					{
 						parenthesisCount -= 1;
 					}
-					if (parenthesisCount == 0)	// We've found the matching closing bracket for the opening bracket at textCtnt[tmp]
+					if (parenthesisCount == 0)	// We've found the matching closing bracket for the opening bracket at textCtnt[condStart]
 					{
-						// why the fuck was I parsing the "if"?
-						//ifText = recParser(textCtnt.substring(0, tmp));
-
 						// Pull out the conditional, and then evaluate it.
-						conditional = textCtnt.substring(tmp+1, i);
+						conditional = textCtnt.substring(condStart+1, i);
 						conditional = evalConditionalStatementStr(conditional);
 
 						// Make sure the contents of the if-statement have been evaluated to a plain-text string before trying to
@@ -555,8 +539,8 @@ package classes.Parser.Main
 						// And now do the actual splitting.
 						output = splitConditionalResult(output);
 
+						// LOTS of debugging
 						if (conditionalDebug) trace("prefix = '", ret[0], "' conditional = ", conditional, " content = ", output);
-						
 						if (conditionalDebug) trace("-0--------------------------------------------------");
 						if (conditionalDebug) trace("Content Item 1 = ", output[0])
 						if (conditionalDebug) trace("-1--------------------------------------------------");
@@ -573,8 +557,8 @@ package classes.Parser.Main
 			}
 			else
 			{
-				if (this._settingsClass.haltOnErrors) throw new Error("");
-				throw new Error("Invalid if statement!", textCtnt);
+				if (this._settingsClass.haltOnErrors) throw new Error("Invalid if statement!", textCtnt);
+				return "<b>Invalid IF Statement<b/>" + textCtnt;
 			}
 			return "";
 		}
@@ -597,12 +581,14 @@ package classes.Parser.Main
 				return localThis[inStr];
 			}
 			
-			else if (inStr.indexOf('.') > 0) // *should* be > -1, but if the string starts with a dot, it can't be a valid reference to a nested class anyways.
+			if (inStr.indexOf('.') > 0) // *should* be > -1, but if the string starts with a dot, it can't be a valid reference to a nested class anyways.
 			{
 				var localReference:String;
 				var itemName:String;
 				localReference = inStr.substr(0, inStr.indexOf('.'));
 				itemName = inStr.substr(inStr.indexOf('.')+1);
+
+				// Debugging, what debugging?
 				if (lookupParserDebug) trace("localReference = ", localReference);
 				if (lookupParserDebug) trace("itemName = ", itemName);
 				if (lookupParserDebug) trace("localThis = \"", localThis, "\"");
@@ -635,7 +621,6 @@ package classes.Parser.Main
 		{
 			var argResult:String = null;
 
-			var obj:*;
 
 			var argTemp:Array = inputArg.split(" ");
 			if (argTemp.length != 2)
@@ -660,9 +645,9 @@ package classes.Parser.Main
 				
 				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
 
-				// Split up into multiple variables for debugging (it was crashing at one point)
+				// Split up into multiple variables for debugging (it was crashing at one point. Separating the calls let me delineate what was crashing)
 				var tmp1:String = this.parserState[sceneName];
-				var tmp2:String = recParser(tmp1, 0);		// we have to actually parse the scene now
+				var tmp2:String = recParser(tmp1, 0);			// we have to actually parse the scene now
 				var tmp3:String = Showdown.makeHtml(tmp2)
 
 				
@@ -708,7 +693,7 @@ package classes.Parser.Main
 				if (sceneParserDebug) trace("this.parserState."+prop+" = "+this.parserState[prop]); 
 			}
 			*/
-
+			var ret:String = "";
 
 			if (sceneParserDebug) trace("Entering parser scene: \""+sceneName+"\"");
 			if (sceneParserDebug) trace("Do we have the scene name? ", sceneName in this.parserState)
@@ -732,14 +717,14 @@ package classes.Parser.Main
 
 				var tmp1:String = this.parserState[sceneName];
 				var tmp2:String = recParser(tmp1, 0);		// we have to actually parse the scene now
-				var tmp3:String = Showdown.makeHtml(tmp2)
+				ret             = Showdown.makeHtml(tmp2)
 
 				
 
-				_ownerClass.rawOutputText(tmp3, true);			// and then stick it on the display
+				_ownerClass.rawOutputText(ret, true);			// and then stick it on the display
 
 				//if (sceneParserDebug) trace("Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
-				if (sceneParserDebug) trace("Scene contents after markdown: \"" + tmp3 + "\"");
+				if (sceneParserDebug) trace("Scene contents after markdown: \"" + ret + "\"");
 			}
 			else if (this.getObjectFromString(_ownerClass, sceneName) != null)
 			{
@@ -752,7 +737,7 @@ package classes.Parser.Main
 				_ownerClass.doNext(_ownerClass.debugPane);
 			
 			}
-			return tmp2
+			return ret
 
 		}
 
@@ -796,8 +781,8 @@ package classes.Parser.Main
 		private function parseButtonTag(textCtnt:String):void
 		{
 			// TODO: Allow button positioning!
-			var arr:Array;
-			arr = textCtnt.split("|")
+			
+			var arr:Array = textCtnt.split("|")
 			if (arr.len > 2)
 			{
 				if (this._settingsClass.haltOnErrors) throw new Error("");
@@ -858,10 +843,6 @@ package classes.Parser.Main
 			var singleWordTagRegExp:RegExp = /^[\w\.]+$/;
 			var doubleWordTagRegExp:RegExp = /^[\w\.]+\s[\w\.]+$/;
 
-			var singleWordExpRes:Object = singleWordTagRegExp.exec(textCtnt);
-			var doubleWordExpRes:Object = doubleWordTagRegExp.exec(textCtnt);
-
-			if (mainParserDebug) trace("Checking if single word = [" + singleWordExpRes + "]", getQualifiedClassName(singleWordExpRes));
 			if (mainParserDebug) trace("string length = ", textCtnt.length);
 
 			if (textCtnt.toLowerCase().indexOf("insertsection") == 0)
@@ -869,12 +850,12 @@ package classes.Parser.Main
 				if (sceneParserDebug) trace("It's a scene section insert tag!");
 				retStr = this.getSceneSectionToInsert(textCtnt)
 			}
-			else if (singleWordExpRes)
+			else if (singleWordTagRegExp.exec(textCtnt))
 			{
 				if (mainParserDebug) trace("It's a single word!");
 				retStr += convertSingleArg(textCtnt);
 			}
-			else if (doubleWordExpRes)
+			else if (doubleWordTagRegExp.exec(textCtnt))
 			{
 				if (mainParserDebug) trace("Two-word tag!")
 				retStr += convertDoubleArg(textCtnt);
@@ -911,29 +892,29 @@ package classes.Parser.Main
 
 			var bracketCnt:Number = 0;
 
-			var tmp:Number = -1;
+			var lastBracket:Number = -1;
 
 			var retStr:String = "";
 
 			do
 			{
-				tmp = textCtnt.indexOf("[", tmp+1);
-				if (textCtnt.charAt(tmp-1) == "\\")
+				lastBracket = textCtnt.indexOf("[", lastBracket+1);
+				if (textCtnt.charAt(lastBracket-1) == "\\")
 				{
-					// trace("bracket is escaped 1", tmp);
+					// trace("bracket is escaped 1", lastBracket);
 				}
-				else if (tmp != -1)
+				else if (lastBracket != -1)
 				{
-					// trace("need to parse bracket", tmp);
+					// trace("need to parse bracket", lastBracket);
 					break;
 				}
 
-			} while (tmp != -1)
+			} while (lastBracket != -1)
 
 
-			if (tmp != -1)		// If we have any open brackets
+			if (lastBracket != -1)		// If we have any open brackets
 			{
-				for (i = tmp; i < textCtnt.length; i += 1)
+				for (i = lastBracket; i < textCtnt.length; i += 1)
 				{
 					if (textCtnt.charAt(i) == "[")
 					{
@@ -951,12 +932,12 @@ package classes.Parser.Main
 							bracketCnt -= 1;
 						}
 					}
-					if (bracketCnt == 0)	// We've found the matching closing bracket for the opening bracket at textCtnt[tmp]
+					if (bracketCnt == 0)	// We've found the matching closing bracket for the opening bracket at textCtnt[lastBracket]
 					{
 						var prefixTmp:String, postfixTmp:String;
 
 						// Only prepend the prefix if it actually has content.
-						prefixTmp = textCtnt.substring(0, tmp);
+						prefixTmp = textCtnt.substring(0, lastBracket);
 						if (mainParserDebug) trace("prefix content = ", prefixTmp);
 						if (prefixTmp)
 							retStr += prefixTmp
@@ -964,7 +945,7 @@ package classes.Parser.Main
 						// therefore, we just add it to the returned string
 
 
-						var tmpStr:String = textCtnt.substring(tmp+1, i);
+						var tmpStr:String = textCtnt.substring(lastBracket+1, i);
 						tmpStr = evalForSceneControls(tmpStr);		
 						// evalForSceneControls swallows scene controls, so they won't get parsed further now.
 						// therefore, you could *theoretically* have nested scene pages, though I don't know WHY you'd ever want that.
@@ -976,14 +957,12 @@ package classes.Parser.Main
 							if (conditionalDebug) trace("------------------0000000000000000000000000000000000000000000000000000000000000000-----------------------")
 							//trace("Parsed Ccnditional - ", retStr)
 						}
-						else
+						else if (tmpStr)
 						{
 							
-							if (tmpStr)
-							{
-								if (printCcntentDebug) trace("Parsing bracket contents = ", tmpStr);
-								retStr += parseNonIfStatement(recParser(tmpStr, depth), depth);
-							}
+							if (printCcntentDebug) trace("Parsing bracket contents = ", tmpStr);
+							retStr += parseNonIfStatement(recParser(tmpStr, depth), depth);
+							
 						}
 
 						// First parse into the text in the brackets (to resolve any nested brackets)
