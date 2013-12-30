@@ -160,7 +160,7 @@ package classes.Parser.Main
 		{
 			var argResult:String = null;
 
-			var obj:*;
+			var thing:*;
 
 			var argTemp:Array = inputArg.split(" ");
 			if (argTemp.length != 2)
@@ -221,43 +221,64 @@ package classes.Parser.Main
 
 			var descriptorArray:Array = subject.split(".");
 
-			obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
-			if (obj == null)		// Completely bad tag
+			thing = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
+			if (thing == null)		// Completely bad tag
 			{
 				return "<b>!Unknown subject in \"" + inputArg + "\"!</b>";
 			}
-			if (obj.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
+			if (thing.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
 			{
 				if(argTemp.length > 1) {
-					return obj.getDescription(descriptorArray[1], aspect);
+					return thing.getDescription(descriptorArray[1], aspect);
 				}
 				else {
-					return obj.getDescription(descriptorArray[1], "");
+					return thing.getDescription(descriptorArray[1], "");
 				}
 			}
 			// end hack
 			// ---------------------------------------------------------------------------------
 
-			if (obj != null)
+			var aspectLookup:* = this.getObjectFromString(this._ownerClass, aspect);
+
+			if (thing != null)
 			{
-				if (obj is Function)
+				if (thing is Function)
 				{
 					if (lookupParserDebug) trace("Found corresponding function in owner class");
-					return obj(aspect);
+					return thing(aspect);
+				}
+				else if (thing is Array)
+				{
+					var indice:Number = Number(aspectLower);
+					if (isNaN(indice))
+						return "<b>Cannot use non-number as indice to Array \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
+					else
+						return thing[indice]
+				}
+				else if (thing is Object)
+				{
+					
+					if (thing.hasOwnProperty(aspectLookup))
+						return thing[aspectLookup]
+
+					else if (thing.hasOwnProperty(aspect))
+						return thing[aspect]
+					else
+						return "<b>Object does not have aspect as a member \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + " or " + aspectLookup + "\</b>";
 				}
 				else
 				{
 					// This will work, but I don't know why you'd want to 
 					// the aspect is just ignored
 					if (lookupParserDebug) trace("Found corresponding aspect in owner class");
-					return String(obj);
+					return String(thing);
 				}
 			}
 
 			
 
 
-			if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", obj);
+			if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", thing);
 			return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
 			// return "<b>!Unknown tag \"" + arg + "\"!</b>";
 			
