@@ -67,9 +67,9 @@ package classes.Parser.Main
 
 
 		// this.parserState is used to store the scene-parser state.
-		// it is cleared every time recursiveParser is called, and then any scene tags are added 
+		// it is cleared every time recursiveParser is called, and then any scene tags are added
 		// as parserState["sceneName"] = "scene content"
-		
+
 		public var parserState:Object = new Object();
 
 		// provides singleArgConverters
@@ -93,12 +93,12 @@ package classes.Parser.Main
 			{
 				if (lookupParserDebug) trace("Found corresponding anonymous function");
 				argResult = singleArgConverters[argLower](this._ownerClass);
-				
+
 				if (lookupParserDebug) trace("Called, return = ", argResult);
 
 				if (capitalize)
 					argResult = capitalizeFirstWord(argResult);
-				
+
 				return argResult;
 			}
 			else
@@ -108,7 +108,7 @@ package classes.Parser.Main
 				// TODO: Get rid of this shit.
 				// UGLY hack to patch legacy functionality in TiTS
 				// This needs to go eventually
-				
+
 				var descriptorArray:Array = arg.split(".");
 
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
@@ -123,7 +123,7 @@ package classes.Parser.Main
 				// end hack
 				// ---------------------------------------------------------------------------------
 
-				
+
 				if (lookupParserDebug) trace("Lookup Arg = ", arg);
 				var obj:*;
 				obj = this.getObjectFromString(this._ownerClass, arg);
@@ -150,7 +150,7 @@ package classes.Parser.Main
 		}
 
 
-		// provides twoWordNumericTagsLookup and twoWordTagsLookup, which use 
+		// provides twoWordNumericTagsLookup and twoWordTagsLookup, which use
 		// cockLookups/cockHeadLookups, and rubiLookups/arianLookups respectively
 		include "../doubleArgLookups.as";
 
@@ -209,11 +209,11 @@ package classes.Parser.Main
 					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspectLower + "\"</b>";
 
 			}
-		
+
 
 
 			if (lookupParserDebug) trace("trying to look-up two-word tag in parent")
-			
+
 			// ---------------------------------------------------------------------------------
 			// TODO: Get rid of this shit.
 			// UGLY hack to patch legacy functionality in TiTS
@@ -257,7 +257,7 @@ package classes.Parser.Main
 				}
 				else if (thing is Object)
 				{
-					
+
 					if (thing.hasOwnProperty(aspectLookup))
 						return thing[aspectLookup]
 
@@ -268,20 +268,20 @@ package classes.Parser.Main
 				}
 				else
 				{
-					// This will work, but I don't know why you'd want to 
+					// This will work, but I don't know why you'd want to
 					// the aspect is just ignored
 					if (lookupParserDebug) trace("Found corresponding aspect in owner class");
 					return String(thing);
 				}
 			}
 
-			
+
 
 
 			if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", thing);
 			return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
 			// return "<b>!Unknown tag \"" + arg + "\"!</b>";
-			
+
 			return argResult;
 		}
 
@@ -290,7 +290,7 @@ package classes.Parser.Main
 
 
 		// Provides the conditionalOptions object
-		include "../conditionalConverters.as";	
+		include "../conditionalConverters.as";
 
 		// converts a single argument to a conditional to
 		// the relevant value, either by simply converting to a Number, or
@@ -319,8 +319,8 @@ package classes.Parser.Main
 				if (printConditionalEvalDebug) trace("Called, return = ", argResult);
 				return argResult;
 			}
-			
-			
+
+
 			var obj:* = this.getObjectFromString(this._ownerClass, arg);
 
 			if (printConditionalEvalDebug) trace("Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
@@ -344,8 +344,9 @@ package classes.Parser.Main
 			else
 			{
 				if (printConditionalEvalDebug) trace("No lookups found!");
+				return null
 			}
-			
+
 
 			if (printConditionalEvalDebug) trace("Could not convert to number. Evaluated ", arg, " as", argResult)
 			return argResult;
@@ -378,8 +379,18 @@ package classes.Parser.Main
 			var expressionResult:Object = isExp.exec(textCond);
 			if (!expressionResult)
 			{
-				if (printConditionalEvalDebug) trace("Invalid conditional!")
-				return false
+				var condArg:* = convertConditionalArgumentFromStr(textCond);
+				if (condArg != null)
+				{
+					if (printConditionalEvalDebug) trace("Conditional \"", textCond, "\" Evalueated to: \"", condArg, "\"")
+					return condArg
+				}
+				else
+				{
+					trace("Invalid conditional! \"(", textCond, ")\" Conditionals must be in format:")
+					trace(" \"({statment1} (==|=|!=|<|>|<=|>=) {statement2})\" or \"({valid variable/function name})\". ")
+					return false
+				}
 			}
 			if (printConditionalEvalDebug) trace("Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
 
@@ -485,8 +496,8 @@ package classes.Parser.Main
 
 			return ret;
 		}
-		
-		
+
+
 
 		// Called to evaluate a if statment string, and return the evaluated result.
 		// Returns an empty string ("") if the conditional rvaluates to false, and there is no else
@@ -507,7 +518,7 @@ package classes.Parser.Main
 			// ["condition", "OUTPUT_IF_TRUE | OUTPUT_IF_FALSE"]
 			// Finally, evalConditionalStatementStr() is called on the "condition", the result
 			// of which is used to determine which content-section is returned
-			// 
+			//
 
 
 			// TODO: (NOT YET) Allows nested condition parenthesis, because I'm masochistic
@@ -515,7 +526,7 @@ package classes.Parser.Main
 
 			// POSSIBLE BUG: A actual statement starting with "if" could be misinterpreted as an if-statement
 			// It's unlikely, but I *could* see it happening.
-			// I need to do some testing 
+			// I need to do some testing
 			// ~~~~Fake-Name
 
 
@@ -601,7 +612,7 @@ package classes.Parser.Main
 				if (lookupParserDebug) trace("item: ", inStr, " in: ", localThis);
 				return localThis[inStr];
 			}
-			
+
 			if (inStr.indexOf('.') > 0) // *should* be > -1, but if the string starts with a dot, it can't be a valid reference to a nested class anyways.
 			{
 				var localReference:String;
@@ -614,8 +625,8 @@ package classes.Parser.Main
 				if (lookupParserDebug) trace("itemName = ", itemName);
 				if (lookupParserDebug) trace("localThis = \"", localThis, "\"");
 				if (lookupParserDebug) trace("dereferenced = ", localThis[localReference]);
-				
-				// If we have the localReference as a member of the localThis, call this function again to further for 
+
+				// If we have the localReference as a member of the localThis, call this function again to further for
 				// the item itemName in localThis[localReference]
 				// This allows arbitrarily-nested data-structures, by recursing over the . structure in inStr
 				if (localReference in localThis)
@@ -629,7 +640,7 @@ package classes.Parser.Main
 				}
 
 			}
-			
+
 			if (lookupParserDebug) trace("item: ", inStr, " NOT in: ", localThis);
 
 			return null;
@@ -661,9 +672,9 @@ package classes.Parser.Main
 
 
 			if (sceneName in this.parserState)
-			{	
+			{
 				if (sceneParserDebug) trace("Have sceneSection \""+sceneName+"\". Parsing and setting up menu");
-				
+
 				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
 
 				// Split up into multiple variables for debugging (it was crashing at one point. Separating the calls let me delineate what was crashing)
@@ -671,7 +682,7 @@ package classes.Parser.Main
 				var tmp2:String = recParser(tmp1, 0);			// we have to actually parse the scene now
 				var tmp3:String = Showdown.makeHtml(tmp2)
 
-				
+
 
 				return tmp3;			// and then stick it on the display
 
@@ -680,7 +691,7 @@ package classes.Parser.Main
 			else
 			{
 				return "Insert sceneSection called with unknown arg \""+sceneName+"\". falling back to the debug pane";
-			
+
 			}
 		}
 
@@ -694,9 +705,9 @@ package classes.Parser.Main
 		// TODO: Make failed scene button lookups fail in a debuggable manner!
 
 		// Parser button event handler
-		// This is the event bound to all button events, as well as the function called 
-		// to enter the parser's cached scenes. If you pass recursiveParser a set of scenes including a scene named 
-		// "startup", the parser will not exit normally, and will instead enter the "startup" scene at the completion of parsing the 
+		// This is the event bound to all button events, as well as the function called
+		// to enter the parser's cached scenes. If you pass recursiveParser a set of scenes including a scene named
+		// "startup", the parser will not exit normally, and will instead enter the "startup" scene at the completion of parsing the
 		// input string.
 		//
 		// the passed seneName string is preferentially looked-up in the cached scene array, and if there is not a cached scene of name sceneName
@@ -709,9 +720,9 @@ package classes.Parser.Main
 
 			/*
 			if (sceneParserDebug) trace("this.parserStateContents:")
-			for (var prop in this.parserState) 
+			for (var prop in this.parserState)
 			{
-				if (sceneParserDebug) trace("this.parserState."+prop+" = "+this.parserState[prop]); 
+				if (sceneParserDebug) trace("this.parserState."+prop+" = "+this.parserState[prop]);
 			}
 			*/
 			var ret:String = "";
@@ -724,23 +735,23 @@ package classes.Parser.Main
 				//doNextClear(debugPane);
 
 				// TODO:
-				// This needs to change to something else anyways. I need to add the ability to 
+				// This needs to change to something else anyways. I need to add the ability to
 				// tell the parser where to exit to at some point
 				_ownerClass.debugPane();
-				
+
 			}
 			else if (sceneName in this.parserState)
-			{	
+			{
 				if (sceneParserDebug) trace("Have scene \""+sceneName+"\". Parsing and setting up menu");
 				_ownerClass.menu();
-				
+
 				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
 
 				var tmp1:String = this.parserState[sceneName];
 				var tmp2:String = recParser(tmp1, 0);		// we have to actually parse the scene now
 				ret             = Showdown.makeHtml(tmp2)
 
-				
+
 
 				_ownerClass.rawOutputText(ret, true);			// and then stick it on the display
 
@@ -756,7 +767,7 @@ package classes.Parser.Main
 			{
 				if (sceneParserDebug) trace("Enter scene called with unknown arg \""+sceneName+"\". falling back to the debug pane");
 				_ownerClass.doNext(_ownerClass.debugPane);
-			
+
 			}
 			return ret
 
@@ -765,17 +776,17 @@ package classes.Parser.Main
 		// Parses the contents of a scene tag, shoves the unprocessed text in the scene object (this.parserState)
 		// under the proper name.
 		// Scenes tagged as such:
-		// 
+		//
 		// [sceneName | scene contents blaugh]
-		// 
+		//
 		// This gets placed in this.parserState so this.parserState["sceneName"] == "scene contents blaugh"
-		// 
+		//
 		// Note that parsing of the actual scene contents is deferred untill it's actually called for display.
 		private function parseSceneTag(textCtnt:String):void
 		{
 			var sceneName:String;
 			var sceneCont:String;
-			
+
 			sceneName = textCtnt.substring(textCtnt.indexOf(' ') ,textCtnt.indexOf('|'));
 			sceneCont = textCtnt.substr(textCtnt.indexOf('|')+1);
 
@@ -795,14 +806,14 @@ package classes.Parser.Main
 		// Current syntax:
 		//
 		// [button function_name | Button Name]
-		// where "button" is a constant string, "function_name" is the name of the function pressing the button will call, 
+		// where "button" is a constant string, "function_name" is the name of the function pressing the button will call,
 		// and "Button Name" is the text that will be shown on the button.
 		// Note that the function name cannot contain spaces (actionscript requires this), and is case-sensitive
 		// "Button name" can contain arbitrary spaces or characters, excepting "]", "[" and "|"
 		private function parseButtonTag(textCtnt:String):void
 		{
 			// TODO: Allow button positioning!
-			
+
 			var arr:Array = textCtnt.split("|")
 			if (arr.len > 2)
 			{
@@ -835,7 +846,7 @@ package classes.Parser.Main
 			{
 				if (sceneParserDebug) trace("It's a button add statement");
 				parseButtonTag(textCtnt);
-				return "";	
+				return "";
 			}
 			return textCtnt;
 		}
@@ -854,7 +865,7 @@ package classes.Parser.Main
 		// if not, it simply returns the contents as passed
 		private function parseNonIfStatement(textCtnt:String, depth:int):String
 		{
-			
+
 			var retStr:String = "";
 			if (printCcntentDebug) trace("Parsing content string: ", textCtnt);
 
@@ -886,7 +897,7 @@ package classes.Parser.Main
 				if (mainParserDebug) trace("Cannot parse content. What?", textCtnt)
 				retStr += "<b>!Unknown multi-word tag \"" + retStr + "\"!</b>";
 			}
-		
+
 			return retStr;
 		}
 
@@ -967,7 +978,7 @@ package classes.Parser.Main
 
 
 						var tmpStr:String = textCtnt.substring(lastBracket+1, i);
-						tmpStr = evalForSceneControls(tmpStr);		
+						tmpStr = evalForSceneControls(tmpStr);
 						// evalForSceneControls swallows scene controls, so they won't get parsed further now.
 						// therefore, you could *theoretically* have nested scene pages, though I don't know WHY you'd ever want that.
 
@@ -980,10 +991,10 @@ package classes.Parser.Main
 						}
 						else if (tmpStr)
 						{
-							
+
 							if (printCcntentDebug) trace("Parsing bracket contents = ", tmpStr);
 							retStr += parseNonIfStatement(recParser(tmpStr, depth), depth);
-							
+
 						}
 
 						// First parse into the text in the brackets (to resolve any nested brackets)
@@ -1001,9 +1012,9 @@ package classes.Parser.Main
 							if (printCcntentDebug) trace("Need to parse trailing text", postfixTmp)
 							retStr += recParser(postfixTmp, depth);	// Parse the trailing text (if any)
 							// Note: This leads to LOTS of recursion. Since we basically call recParser once per
-							// tag, it means that if a body of text has 30 tags, we'll end up recursing at least 
+							// tag, it means that if a body of text has 30 tags, we'll end up recursing at least
 							// 29 times before finishing.
-							// Making this tail-call reursive, or just parsing it flatly may be a much better option in 
+							// Making this tail-call reursive, or just parsing it flatly may be a much better option in
 							// the future, if this does become an issue.
 						}
 						else
@@ -1044,7 +1055,7 @@ package classes.Parser.Main
 			// Reset the parser's internal state, since we're parsing a new string:
 			// trace("Purging scene parser contents")
 			this.parserState = new Object();
-			
+
 
 
 			var ret:String = "";
@@ -1053,14 +1064,14 @@ package classes.Parser.Main
 			ret = recParser(contents, 0);
 			if (printIntermediateParseStateDebug) trace("Parser intermediate contents = ", ret)
 			// Currently, not parsing text as markdown by default because it's fucking with the line-endings.
-			
+
 			if (prettyQuotes)
 			{
 				// Convert quotes to prettyQuotes
 				ret = this.makeQuotesPrettah(ret);
 				// Quote conversion has to go before markdown calls
 			}
-			
+
 			if (parseAsMarkdown)
 			{
 				// trace("markdownificating");
@@ -1082,9 +1093,9 @@ package classes.Parser.Main
 
 
 			/*
-			for (var prop in this.parserState) 
+			for (var prop in this.parserState)
 			{
-				trace("this.parserState."+prop+" = "+this.parserState[prop]); 
+				trace("this.parserState."+prop+" = "+this.parserState[prop]);
 			}
 			*/
 
@@ -1095,9 +1106,9 @@ package classes.Parser.Main
 
 				// HORRIBLE HACK
 				// since we're initially called via a outputText command, the content of the first page's text will be overwritten
-				// when we return. Therefore, in a horrible hack, we return the contents of mainTest.htmlText as the ret value, so 
+				// when we return. Therefore, in a horrible hack, we return the contents of mainTest.htmlText as the ret value, so
 				// the outputText call overwrites the window content with the exact same content.
-				
+
 				// trace("Returning: ", ret);
 				_ownerClass.currentText = ret;
 
@@ -1117,14 +1128,14 @@ package classes.Parser.Main
 
 		private function makeQuotesPrettah(inStr:String):String
 		{
-			
+
 			inStr = inStr.replace(/(\w)'(\w)/g,										"$1\u2019$2")	// Apostrophes
 			             .replace(/(^|[\r\n 	\.\!\,\?])"([a-zA-Z<>\.\!\,\?])/g,	"$1\u201c$2")	// Opening doubles
 			             .replace(/([a-zA-Z<>\.\!\,\?])"([\r\n 	\.\!\,\?]|$)/g,		"$1\u201d$2")	// Closing doubles
 			             .replace(/--/g,  											"\u2014");		// em-dashes
 			return inStr;
 		}
-		
+
 
 		// ---------------------------------------------------------------------------------------------------------------------------------------
 		// ---------------------------------------------------------------------------------------------------------------------------------------
