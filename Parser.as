@@ -765,7 +765,7 @@ package classes.Parser.Main
 			}
 			else
 			{
-				if (sceneParserDebug) trace("Enter scene called with unknown arg \""+sceneName+"\". falling back to the debug pane");
+				trace("Enter scene called with unknown arg/function \""+sceneName+"\". falling back to the debug pane");
 				_ownerClass.doNext(_ownerClass.debugPane);
 
 			}
