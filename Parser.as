@@ -18,6 +18,7 @@ package classes.Parser.Main
 		public var printCcntentDebug:Boolean = false;
 		public var printConditionalEvalDebug:Boolean = false;
 		public var printIntermediateParseStateDebug:Boolean = false;
+		public var logErrors:Boolean = true;
 
 
 		public function Parser(ownerClass:*, settingsClass:*)
@@ -91,10 +92,10 @@ package classes.Parser.Main
 			argLower = arg.toLowerCase()
 			if (argLower in singleArgConverters)
 			{
-				if (lookupParserDebug) trace("Found corresponding anonymous function");
+				//if (logErrors) trace("WARNING: Found corresponding anonymous function");
 				argResult = singleArgConverters[argLower](this._ownerClass);
 
-				if (lookupParserDebug) trace("Called, return = ", argResult);
+				if (lookupParserDebug) trace("WARNING: Called, return = ", argResult);
 
 				if (capitalize)
 					argResult = capitalizeFirstWord(argResult);
@@ -114,6 +115,7 @@ package classes.Parser.Main
 				obj = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
 				if (obj == null)		// Completely bad tag
 				{
+					if (lookupParserDebug || logErrors) trace("WARNING: Unknown subject in " + arg);
 					return "<b>!Unknown subject in \"" + arg + "\"!</b>";
 				}
 				if (obj.hasOwnProperty("getDescription") && arg.indexOf(".") > 0)
@@ -124,25 +126,25 @@ package classes.Parser.Main
 				// ---------------------------------------------------------------------------------
 
 
-				if (lookupParserDebug) trace("Lookup Arg = ", arg);
+				if (lookupParserDebug) trace("WARNING: Lookup Arg = ", arg);
 				var obj:*;
 				obj = this.getObjectFromString(this._ownerClass, arg);
 				if (obj != null)
 				{
 					if (obj is Function)
 					{
-						if (lookupParserDebug) trace("Found corresponding function in owner class");
+						if (lookupParserDebug) trace("WARNING: Found corresponding function in owner class");
 						return obj();
 					}
 					else
 					{
-						if (lookupParserDebug) trace("Found corresponding aspect in owner class");
+						if (lookupParserDebug) trace("WARNING: Found corresponding aspect in owner class");
 						return String(obj); 	// explicit cast probably not needed
 					}
 				}
 				else
 				{
-					if (lookupParserDebug) trace("No lookup found for", arg, " search result is: ", obj);
+					if (lookupParserDebug || logErrors) trace("WARNING: No lookup found for", arg, " search result is: ", obj);
 					return "<b>!Unknown tag \"" + arg + "\"!</b>";
 				}
 			}
@@ -165,6 +167,7 @@ package classes.Parser.Main
 			var argTemp:Array = inputArg.split(" ");
 			if (argTemp.length != 2)
 			{
+				if (logErrors) trace("WARNING: Not actually a two word tag! " + inputArg);
 				return "<b>!Not actually a two-word tag!\"" + inputArg + "\"!</b>"
 			}
 			var subject:String = argTemp[0];
@@ -172,7 +175,7 @@ package classes.Parser.Main
 			var subjectLower:String = argTemp[0].toLowerCase();
 			var aspectLower:* = argTemp[1].toLowerCase();
 
-			if (lookupParserDebug) trace("Doing lookup for subject", subject, " aspect ", aspect);
+			if (lookupParserDebug) trace("WARNING: Doing lookup for subject", subject, " aspect ", aspect);
 
 			// Figure out if we need to capitalize the resulting text
 			var capitalize:Boolean = isUpperCase(aspect.charAt(0));
@@ -184,11 +187,11 @@ package classes.Parser.Main
 			{
 				aspectLower = Number(aspectLower);
 
-				if (lookupParserDebug) trace("Found corresponding anonymous function");
+				if (lookupParserDebug) trace("WARNING: Found corresponding anonymous function");
 				argResult = twoWordNumericTagsLookup[subjectLower](this._ownerClass, aspectLower);
 				if (capitalize)
 					argResult = capitalizeFirstWord(argResult);
-				if (lookupParserDebug) trace("Called two word numeric lookup, return = ", argResult);
+				if (lookupParserDebug) trace("WARNING: Called two word numeric lookup, return = ", argResult);
 				return argResult;
 			}
 
@@ -198,21 +201,24 @@ package classes.Parser.Main
 				if (aspectLower in twoWordTagsLookup[subjectLower])
 				{
 
-					if (lookupParserDebug) trace("Found corresponding anonymous function");
+					if (lookupParserDebug) trace("WARNING: Found corresponding anonymous function");
 					argResult = twoWordTagsLookup[subjectLower][aspectLower](this._ownerClass);
 					if (capitalize)
 						argResult = capitalizeFirstWord(argResult);
-					if (lookupParserDebug) trace("Called two word lookup, return = ", argResult);
+					if (lookupParserDebug) trace("WARNING: Called two word lookup, return = ", argResult);
 					return argResult;
 				}
 				else
+				{
+					if (logErrors) trace("WARNING: Unknown aspect in two-word tag. Arg: " + inputArg + " Aspect: " + aspectLower);
 					return "<b>!Unknown aspect in two-word tag \"" + inputArg + "\"! ASCII Aspect = \"" + aspectLower + "\"</b>";
+				}
 
 			}
 
 
 
-			if (lookupParserDebug) trace("trying to look-up two-word tag in parent")
+			if (lookupParserDebug) trace("WARNING: trying to look-up two-word tag in parent")
 
 			// ---------------------------------------------------------------------------------
 			// TODO: Get rid of this shit.
@@ -224,6 +230,7 @@ package classes.Parser.Main
 			thing = this.getObjectFromString(this._ownerClass, descriptorArray[0]);
 			if (thing == null)		// Completely bad tag
 			{
+				if (logErrors) trace("WARNING: Unknown subject in " + inputArg);
 				return "<b>!Unknown subject in \"" + inputArg + "\"!</b>";
 			}
 			if (thing.hasOwnProperty("getDescription") && subject.indexOf(".") > 0)
@@ -244,14 +251,17 @@ package classes.Parser.Main
 			{
 				if (thing is Function)
 				{
-					if (lookupParserDebug) trace("Found corresponding function in owner class");
+					if (lookupParserDebug) trace("WARNING: Found corresponding function in owner class");
 					return thing(aspect);
 				}
 				else if (thing is Array)
 				{
 					var indice:Number = Number(aspectLower);
 					if (isNaN(indice))
+					{
+						if (logErrors) trace("WARNING: Cannot use non-number as indice to Array. Arg " + inputArg + " Subject: " + subject + " Aspect: " + aspect); 
 						return "<b>Cannot use non-number as indice to Array \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
+					}
 					else
 						return thing[indice]
 				}
@@ -264,13 +274,16 @@ package classes.Parser.Main
 					else if (thing.hasOwnProperty(aspect))
 						return thing[aspect]
 					else
+					{
+						if (logErrors) trace("WARNING: Object does not have aspect as a member. Arg: " + inputArg + " Subject: " + subject + " Aspect:" + aspect + " or " + aspectLookup);
 						return "<b>Object does not have aspect as a member \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + " or " + aspectLookup + "\</b>";
+					}
 				}
 				else
 				{
 					// This will work, but I don't know why you'd want to
 					// the aspect is just ignored
-					if (lookupParserDebug) trace("Found corresponding aspect in owner class");
+					if (lookupParserDebug) trace("WARNING: Found corresponding aspect in owner class");
 					return String(thing);
 				}
 			}
@@ -278,7 +291,7 @@ package classes.Parser.Main
 
 
 
-			if (lookupParserDebug) trace("No lookup found for", inputArg, " search result is: ", thing);
+			if (lookupParserDebug || logErrors) trace("WARNING: No lookup found for", inputArg, " search result is: ", thing);
 			return "<b>!Unknown subject in two-word tag \"" + inputArg + "\"! Subject = \"" + subject + ", Aspect = " + aspect + "\</b>";
 			// return "<b>!Unknown tag \"" + arg + "\"!</b>";
 
@@ -309,46 +322,46 @@ package classes.Parser.Main
 			// Try to cast to a number. If it fails, go on with the switch/case statement.
 			if (!isNaN(Number(arg)))
 			{
-				if (printConditionalEvalDebug) trace("Converted to float. Number = ", Number(arg))
+				if (printConditionalEvalDebug) trace("WARNING: Converted to float. Number = ", Number(arg))
 				return Number(arg);
 			}
 			if (argLower in conditionalOptions)
 			{
-				if (printConditionalEvalDebug) trace("Found corresponding anonymous function");
+				if (printConditionalEvalDebug) trace("WARNING: Found corresponding anonymous function");
 				argResult = conditionalOptions[argLower](this._ownerClass);
-				if (printConditionalEvalDebug) trace("Called, return = ", argResult);
+				if (printConditionalEvalDebug) trace("WARNING: Called, return = ", argResult);
 				return argResult;
 			}
 
 
 			var obj:* = this.getObjectFromString(this._ownerClass, arg);
 
-			if (printConditionalEvalDebug) trace("Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
+			if (printConditionalEvalDebug) trace("WARNING: Looked up ", arg, " in ", this._ownerClass, "Result was:", obj);
 			if (obj != null)
 			{
-				if (printConditionalEvalDebug) trace("Found corresponding function for conditional argument lookup.");
+				if (printConditionalEvalDebug) trace("WARNING: Found corresponding function for conditional argument lookup.");
 
 				if (obj is Function)
 				{
-					if (printConditionalEvalDebug) trace("Found corresponding function in owner class");
+					if (printConditionalEvalDebug) trace("WARNING: Found corresponding function in owner class");
 					argResult = Number(obj());
 					return argResult;
 				}
 				else
 				{
-					if (printConditionalEvalDebug) trace("Found corresponding aspect in owner class");
+					if (printConditionalEvalDebug) trace("WARNING: Found corresponding aspect in owner class");
 					argResult = Number(obj);
 					return argResult;
 				}
 			}
 			else
 			{
-				if (printConditionalEvalDebug) trace("No lookups found!");
+				if (printConditionalEvalDebug || logErrors) trace("WARNING: No lookups found!");
 				return null
 			}
 
 
-			if (printConditionalEvalDebug) trace("Could not convert to number. Evaluated ", arg, " as", argResult)
+			if (printConditionalEvalDebug || LogErrors) trace("WARNING: Could not convert to number. Evaluated ", arg, " as", argResult)
 			return argResult;
 		}
 
@@ -382,17 +395,17 @@ package classes.Parser.Main
 				var condArg:* = convertConditionalArgumentFromStr(textCond);
 				if (condArg != null)
 				{
-					if (printConditionalEvalDebug) trace("Conditional \"", textCond, "\" Evalueated to: \"", condArg, "\"")
+					if (printConditionalEvalDebug) trace("WARNING: Conditional \"", textCond, "\" Evalueated to: \"", condArg, "\"")
 					return condArg
 				}
 				else
 				{
-					trace("Invalid conditional! \"(", textCond, ")\" Conditionals must be in format:")
-					trace(" \"({statment1} (==|=|!=|<|>|<=|>=) {statement2})\" or \"({valid variable/function name})\". ")
+					if (logErrors) trace("WARNING: Invalid conditional! \"(", textCond, ")\" Conditionals must be in format:")
+					if (logErrors) trace("WARNING:  \"({statment1} (==|=|!=|<|>|<=|>=) {statement2})\" or \"({valid variable/function name})\". ")
 					return false
 				}
 			}
-			if (printConditionalEvalDebug) trace("Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
+			if (printConditionalEvalDebug) trace("WARNING: Expression = ", textCond, "Expression result = [", expressionResult, "], length of = ", expressionResult.length);
 
 			var condArgStr1:String    = expressionResult[1];
 			var operator:String       = expressionResult[2];
@@ -422,7 +435,7 @@ package classes.Parser.Main
 				retVal = (condArg1 != condArg2);
 
 
-			if (printConditionalEvalDebug) trace("Check: " + condArg1 + " " + operator + " " + condArg2 + " result: " + retVal);
+			if (printConditionalEvalDebug) trace("WARNING: Check: " + condArg1 + " " + operator + " " + condArg2 + " result: " + retVal);
 
 			return retVal;
 		}
@@ -438,9 +451,9 @@ package classes.Parser.Main
 			// [if (condition) OUTPUT_IF_TRUE | OUTPUT_IF_FALSE]
 			//                 ^          This Bit            ^
 			// If there is no OUTPUT_IF_FALSE, returns an empty string for the second option.
-			if (conditionalDebug) trace("------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
-			if (conditionalDebug) trace("Split Conditional input string: ", textCtnt)
-			if (conditionalDebug) trace("------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
+			if (conditionalDebug) trace("WARNING: ------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
+			if (conditionalDebug) trace("WARNING: Split Conditional input string: ", textCtnt)
+			if (conditionalDebug) trace("WARNING: ------------------4444444444444444444444444444444444444444444444444444444444-----------------------")
 
 
 			var ret:Array = new Array("", "");
@@ -490,9 +503,9 @@ package classes.Parser.Main
 			ret[section] = textCtnt.substring(sectionStart, textCtnt.length);
 
 
-			if (conditionalDebug) trace("------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
-			if (conditionalDebug) trace("Outputs: ", ret)
-			if (conditionalDebug) trace("------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
+			if (conditionalDebug) trace("WARNING: ------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
+			if (conditionalDebug) trace("WARNING: Outputs: ", ret)
+			if (conditionalDebug) trace("WARNING: ------------------5555555555555555555555555555555555555555555555555555555555-----------------------")
 
 			return ret;
 		}
@@ -530,9 +543,9 @@ package classes.Parser.Main
 			// ~~~~Fake-Name
 
 
-			if (conditionalDebug) trace("------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
-			if (conditionalDebug) trace("If input string: ", textCtnt)
-			if (conditionalDebug) trace("------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
+			if (conditionalDebug) trace("WARNING: ------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
+			if (conditionalDebug) trace("WARNING: If input string: ", textCtnt)
+			if (conditionalDebug) trace("WARNING: ------------------2222222222222222222222222222222222222222222222222222222222-----------------------")
 
 
 			var ret:Array = new Array("", "", "");	// first string is conditional, second string is the output
@@ -572,12 +585,12 @@ package classes.Parser.Main
 						output = splitConditionalResult(output);
 
 						// LOTS of debugging
-						if (conditionalDebug) trace("prefix = '", ret[0], "' conditional = ", conditional, " content = ", output);
-						if (conditionalDebug) trace("-0--------------------------------------------------");
-						if (conditionalDebug) trace("Content Item 1 = ", output[0])
-						if (conditionalDebug) trace("-1--------------------------------------------------");
-						if (conditionalDebug) trace("Item 2 = ", output[1]);
-						if (conditionalDebug) trace("-2--------------------------------------------------");
+						if (conditionalDebug) trace("WARNING: prefix = '", ret[0], "' conditional = ", conditional, " content = ", output);
+						if (conditionalDebug) trace("WARNING: -0--------------------------------------------------");
+						if (conditionalDebug) trace("WARNING: Content Item 1 = ", output[0])
+						if (conditionalDebug) trace("WARNING: -1--------------------------------------------------");
+						if (conditionalDebug) trace("WARNING: Item 2 = ", output[1]);
+						if (conditionalDebug) trace("WARNING: -2--------------------------------------------------");
 
 						if (conditional)
 							return recParser(output[0], depth);
@@ -609,7 +622,7 @@ package classes.Parser.Main
 		{
 			if (inStr in localThis)
 			{
-				if (lookupParserDebug) trace("item: ", inStr, " in: ", localThis);
+				if (lookupParserDebug) trace("WARNING: item: ", inStr, " in: ", localThis);
 				return localThis[inStr];
 			}
 
@@ -621,17 +634,17 @@ package classes.Parser.Main
 				itemName = inStr.substr(inStr.indexOf('.')+1);
 
 				// Debugging, what debugging?
-				if (lookupParserDebug) trace("localReference = ", localReference);
-				if (lookupParserDebug) trace("itemName = ", itemName);
-				if (lookupParserDebug) trace("localThis = \"", localThis, "\"");
-				if (lookupParserDebug) trace("dereferenced = ", localThis[localReference]);
+				if (lookupParserDebug) trace("WARNING: localReference = ", localReference);
+				if (lookupParserDebug) trace("WARNING: itemName = ", itemName);
+				if (lookupParserDebug) trace("WARNING: localThis = \"", localThis, "\"");
+				if (lookupParserDebug) trace("WARNING: dereferenced = ", localThis[localReference]);
 
 				// If we have the localReference as a member of the localThis, call this function again to further for
 				// the item itemName in localThis[localReference]
 				// This allows arbitrarily-nested data-structures, by recursing over the . structure in inStr
 				if (localReference in localThis)
 				{
-					if (lookupParserDebug) trace("have localReference:", localThis[localReference]);
+					if (lookupParserDebug) trace("WARNING: have localReference:", localThis[localReference]);
 					return getObjectFromString(localThis[localReference], itemName);
 				}
 				else
@@ -641,7 +654,7 @@ package classes.Parser.Main
 
 			}
 
-			if (lookupParserDebug) trace("item: ", inStr, " NOT in: ", localThis);
+			if (lookupParserDebug) trace("WARNING: item: ", inStr, " NOT in: ", localThis);
 
 			return null;
 
@@ -663,7 +676,7 @@ package classes.Parser.Main
 			var sceneName:* = argTemp[1];
 			var callNameLower:String = argTemp[0].toLowerCase();
 
-			if (sceneParserDebug) trace("Doing lookup for sceneSection tag:", callName, " scene name: ", sceneName);
+			if (sceneParserDebug) trace("WARNING: Doing lookup for sceneSection tag:", callName, " scene name: ", sceneName);
 
 			// this should have been checked before calling.
 			if (callNameLower != "insertsection")
@@ -673,7 +686,7 @@ package classes.Parser.Main
 
 			if (sceneName in this.parserState)
 			{
-				if (sceneParserDebug) trace("Have sceneSection \""+sceneName+"\". Parsing and setting up menu");
+				if (sceneParserDebug) trace("WARNING: Have sceneSection \""+sceneName+"\". Parsing and setting up menu");
 
 				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
 
@@ -686,7 +699,7 @@ package classes.Parser.Main
 
 				return tmp3;			// and then stick it on the display
 
-				//if (sceneParserDebug) trace("Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
+				//if (sceneParserDebug) trace("WARNING: Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
 			}
 			else
 			{
@@ -719,19 +732,19 @@ package classes.Parser.Main
 		{
 
 			/*
-			if (sceneParserDebug) trace("this.parserStateContents:")
+			if (sceneParserDebug) trace("WARNING: this.parserStateContents:")
 			for (var prop in this.parserState)
 			{
-				if (sceneParserDebug) trace("this.parserState."+prop+" = "+this.parserState[prop]);
+				if (sceneParserDebug) trace("WARNING: this.parserState."+prop+" = "+this.parserState[prop]);
 			}
 			*/
 			var ret:String = "";
 
-			if (sceneParserDebug) trace("Entering parser scene: \""+sceneName+"\"");
-			if (sceneParserDebug) trace("Do we have the scene name? ", sceneName in this.parserState)
+			if (sceneParserDebug) trace("WARNING: Entering parser scene: \""+sceneName+"\"");
+			if (sceneParserDebug) trace("WARNING: Do we have the scene name? ", sceneName in this.parserState)
 			if (sceneName == "exit")
 			{
-				if (sceneParserDebug) trace("Enter scene called to exit");
+				if (sceneParserDebug) trace("WARNING: Enter scene called to exit");
 				//doNextClear(debugPane);
 
 				// TODO:
@@ -742,7 +755,7 @@ package classes.Parser.Main
 			}
 			else if (sceneName in this.parserState)
 			{
-				if (sceneParserDebug) trace("Have scene \""+sceneName+"\". Parsing and setting up menu");
+				if (sceneParserDebug) trace("WARNING: Have scene \""+sceneName+"\". Parsing and setting up menu");
 				_ownerClass.menu();
 
 				buttonNum = 0;		// Clear the button number, so we start adding buttons from button 0
@@ -755,17 +768,17 @@ package classes.Parser.Main
 
 				_ownerClass.rawOutputText(ret, true);			// and then stick it on the display
 
-				//if (sceneParserDebug) trace("Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
-				if (sceneParserDebug) trace("Scene contents after markdown: \"" + ret + "\"");
+				//if (sceneParserDebug) trace("WARNING: Scene contents: \"" + tmp1 + "\" as parsed: \"" + tmp2 + "\"")
+				if (sceneParserDebug) trace("WARNING: Scene contents after markdown: \"" + ret + "\"");
 			}
 			else if (this.getObjectFromString(_ownerClass, sceneName) != null)
 			{
-				if (sceneParserDebug) trace("Have function \""+sceneName+"\" in this!. Calling.");
+				if (sceneParserDebug) trace("WARNING: Have function \""+sceneName+"\" in this!. Calling.");
 				this.getObjectFromString(_ownerClass, sceneName)();
 			}
 			else
 			{
-				trace("Enter scene called with unknown arg/function \""+sceneName+"\". falling back to the debug pane");
+				trace("WARNING: Enter scene called with unknown arg/function \""+sceneName+"\". falling back to the debug pane");
 				_ownerClass.doNext(_ownerClass.debugPane);
 
 			}
@@ -791,7 +804,7 @@ package classes.Parser.Main
 			sceneCont = textCtnt.substr(textCtnt.indexOf('|')+1);
 
 			sceneName = stripStr(sceneName);
-			if (sceneParserDebug) trace("Adding scene with name \"" + sceneName + "\"")
+			if (sceneParserDebug) trace("WARNING: Adding scene with name \"" + sceneName + "\"")
 
 			// Cleanup the scene content from spurious leading and trailing space.
 			sceneCont = trimStr(sceneCont, "\n");
@@ -823,7 +836,7 @@ package classes.Parser.Main
 
 			var buttonName:String = stripStr(arr[1]);
 			var buttonFunc:String = stripStr(arr[0].substring(arr[0].indexOf(' ')));
-			//trace("adding a button with name\"" + buttonName + "\" and function \"" + buttonFunc + "\"");
+			//trace("WARNING: adding a button with name\"" + buttonName + "\" and function \"" + buttonFunc + "\"");
 			_ownerClass.addButton(buttonNum, buttonName, this.enterParserScene, buttonFunc);
 			buttonNum += 1;
 		}
@@ -835,16 +848,16 @@ package classes.Parser.Main
 		{
 
 
-			if (sceneParserDebug) trace("Checking for scene tags.");
+			if (sceneParserDebug) trace("WARNING: Checking for scene tags.");
 			if (textCtnt.toLowerCase().indexOf("screen") == 0)
 			{
-				if (sceneParserDebug) trace("It's a scene");
+				if (sceneParserDebug) trace("WARNING: It's a scene");
 				parseSceneTag(textCtnt);
 				return "";
 			}
 			else if (textCtnt.toLowerCase().indexOf("button") == 0)
 			{
-				if (sceneParserDebug) trace("It's a button add statement");
+				if (sceneParserDebug) trace("WARNING: It's a button add statement");
 				parseButtonTag(textCtnt);
 				return "";
 			}
@@ -867,34 +880,34 @@ package classes.Parser.Main
 		{
 
 			var retStr:String = "";
-			if (printCcntentDebug) trace("Parsing content string: ", textCtnt);
+			if (printCcntentDebug) trace("WARNING: Parsing content string: ", textCtnt);
 
 
-			if (mainParserDebug) trace("Not an if statement")
+			if (mainParserDebug) trace("WARNING: Not an if statement")
 				// Match a single word, with no leading or trailing space
 			var singleWordTagRegExp:RegExp = /^[\w\.]+$/;
 			var doubleWordTagRegExp:RegExp = /^[\w\.]+\s[\w\.]+$/;
 
-			if (mainParserDebug) trace("string length = ", textCtnt.length);
+			if (mainParserDebug) trace("WARNING: string length = ", textCtnt.length);
 
 			if (textCtnt.toLowerCase().indexOf("insertsection") == 0)
 			{
-				if (sceneParserDebug) trace("It's a scene section insert tag!");
+				if (sceneParserDebug) trace("WARNING: It's a scene section insert tag!");
 				retStr = this.getSceneSectionToInsert(textCtnt)
 			}
 			else if (singleWordTagRegExp.exec(textCtnt))
 			{
-				if (mainParserDebug) trace("It's a single word!");
+				if (mainParserDebug) trace("WARNING: It's a single word!");
 				retStr += convertSingleArg(textCtnt);
 			}
 			else if (doubleWordTagRegExp.exec(textCtnt))
 			{
-				if (mainParserDebug) trace("Two-word tag!")
+				if (mainParserDebug) trace("WARNING: Two-word tag!")
 				retStr += convertDoubleArg(textCtnt);
 			}
 			else
 			{
-				if (mainParserDebug) trace("Cannot parse content. What?", textCtnt)
+				if (mainParserDebug) trace("WARNING: Cannot parse content. What?", textCtnt)
 				retStr += "<b>!Unknown multi-word tag \"" + retStr + "\"!</b>";
 			}
 
@@ -909,8 +922,8 @@ package classes.Parser.Main
 		// You pass in the string you want parsed, and the parsed result is returned as a string.
 		private function recParser(textCtnt:String, depth:Number):String
 		{
-			if (mainParserDebug) trace("Recursion call", depth, "---------------------------------------------+++++++++++++++++++++")
-			if (printIntermediateParseStateDebug) trace("Parsing contents = ", textCtnt)
+			if (mainParserDebug) trace("WARNING: Recursion call", depth, "---------------------------------------------+++++++++++++++++++++")
+			if (printIntermediateParseStateDebug) trace("WARNING: Parsing contents = ", textCtnt)
 			// Depth tracks our recursion depth
 			// Basically, we need to handle things differently on the first execution, so we don't mistake single-word print-statements for
 			// a tag. Therefore, every call of recParser increments depth by 1
@@ -933,11 +946,11 @@ package classes.Parser.Main
 				lastBracket = textCtnt.indexOf("[", lastBracket+1);
 				if (textCtnt.charAt(lastBracket-1) == "\\")
 				{
-					// trace("bracket is escaped 1", lastBracket);
+					// trace("WARNING: bracket is escaped 1", lastBracket);
 				}
 				else if (lastBracket != -1)
 				{
-					// trace("need to parse bracket", lastBracket);
+					// trace("WARNING: need to parse bracket", lastBracket);
 					break;
 				}
 
@@ -952,7 +965,7 @@ package classes.Parser.Main
 					{
 						if (textCtnt.charAt(i-1) != "\\")
 						{
-							//trace("bracket is not escaped - 2");
+							//trace("WARNING: bracket is not escaped - 2");
 							bracketCnt += 1;
 						}
 					}
@@ -960,7 +973,7 @@ package classes.Parser.Main
 					{
 						if (textCtnt.charAt(i-1) != "\\")
 						{
-							//trace("bracket is not escaped - 3");
+							//trace("WARNING: bracket is not escaped - 3");
 							bracketCnt -= 1;
 						}
 					}
@@ -970,7 +983,7 @@ package classes.Parser.Main
 
 						// Only prepend the prefix if it actually has content.
 						prefixTmp = textCtnt.substring(0, lastBracket);
-						if (mainParserDebug) trace("prefix content = ", prefixTmp);
+						if (mainParserDebug) trace("WARNING: prefix content = ", prefixTmp);
 						if (prefixTmp)
 							retStr += prefixTmp
 						// We know there aren't any brackets in the section before the first opening bracket.
@@ -984,15 +997,15 @@ package classes.Parser.Main
 
 						if (isIfStatement(tmpStr))
 						{
-							if (conditionalDebug) trace("early eval as if")
+							if (conditionalDebug) trace("WARNING: early eval as if")
 							retStr += parseConditional(tmpStr, depth)
-							if (conditionalDebug) trace("------------------0000000000000000000000000000000000000000000000000000000000000000-----------------------")
-							//trace("Parsed Ccnditional - ", retStr)
+							if (conditionalDebug) trace("WARNING: ------------------0000000000000000000000000000000000000000000000000000000000000000-----------------------")
+							//trace("WARNING: Parsed Ccnditional - ", retStr)
 						}
 						else if (tmpStr)
 						{
 
-							if (printCcntentDebug) trace("Parsing bracket contents = ", tmpStr);
+							if (printCcntentDebug) trace("WARNING: Parsing bracket contents = ", tmpStr);
 							retStr += parseNonIfStatement(recParser(tmpStr, depth), depth);
 
 						}
@@ -1009,7 +1022,7 @@ package classes.Parser.Main
 						postfixTmp = textCtnt.substring(i+1, textCtnt.length);
 						if (postfixTmp.indexOf("[") != -1)
 						{
-							if (printCcntentDebug) trace("Need to parse trailing text", postfixTmp)
+							if (printCcntentDebug) trace("WARNING: Need to parse trailing text", postfixTmp)
 							retStr += recParser(postfixTmp, depth);	// Parse the trailing text (if any)
 							// Note: This leads to LOTS of recursion. Since we basically call recParser once per
 							// tag, it means that if a body of text has 30 tags, we'll end up recursing at least
@@ -1019,7 +1032,7 @@ package classes.Parser.Main
 						}
 						else
 						{
-							if (printCcntentDebug) trace("No brackets in trailing text", postfixTmp)
+							if (printCcntentDebug) trace("WARNING: No brackets in trailing text", postfixTmp)
 							retStr += postfixTmp;
 						}
 
@@ -1032,7 +1045,7 @@ package classes.Parser.Main
 			{
 				// DERP. We should never have brackets around something that ISN'T a tag intended to be parsed. Therefore, we just need
 				// to determine what type of parsing should be done do the tag.
-				if (printCcntentDebug) trace("No brackets present in text passed to recParse", textCtnt);
+				if (printCcntentDebug) trace("WARNING: No brackets present in text passed to recParse", textCtnt);
 
 
 				retStr += textCtnt;
@@ -1049,11 +1062,11 @@ package classes.Parser.Main
 		// You pass in the string you want parsed, and the parsed result is returned as a string.
 		public function recursiveParser(contents:String, parseAsMarkdown:Boolean = false, prettyQuotes:Boolean=true):String
 		{
-			if (mainParserDebug) trace("------------------ Parser called on string -----------------------");
+			if (mainParserDebug) trace("WARNING: ------------------ Parser called on string -----------------------");
 			// Eventually, when this goes properly class-based, we'll add a period, and have this.parserState.
 
 			// Reset the parser's internal state, since we're parsing a new string:
-			// trace("Purging scene parser contents")
+			// trace("WARNING: Purging scene parser contents")
 			this.parserState = new Object();
 
 
@@ -1062,7 +1075,7 @@ package classes.Parser.Main
 			// Run through the parser
 			contents = contents.replace(/\\n/g, "\n")
 			ret = recParser(contents, 0);
-			if (printIntermediateParseStateDebug) trace("Parser intermediate contents = ", ret)
+			if (printIntermediateParseStateDebug) trace("WARNING: Parser intermediate contents = ", ret)
 			// Currently, not parsing text as markdown by default because it's fucking with the line-endings.
 
 			if (prettyQuotes)
@@ -1074,7 +1087,7 @@ package classes.Parser.Main
 
 			if (parseAsMarkdown)
 			{
-				// trace("markdownificating");
+				// trace("WARNING: markdownificating");
 				ret = Showdown.makeHtml(ret);
 
 
@@ -1095,7 +1108,7 @@ package classes.Parser.Main
 			/*
 			for (var prop in this.parserState)
 			{
-				trace("this.parserState."+prop+" = "+this.parserState[prop]);
+				trace("WARNING: this.parserState."+prop+" = "+this.parserState[prop]);
 			}
 			*/
 
@@ -1109,13 +1122,13 @@ package classes.Parser.Main
 				// when we return. Therefore, in a horrible hack, we return the contents of mainTest.htmlText as the ret value, so
 				// the outputText call overwrites the window content with the exact same content.
 
-				// trace("Returning: ", ret);
+				// trace("WARNING: Returning: ", ret);
 				_ownerClass.currentText = ret;
 
 
 			}
 			//trace(ret);
-			// trace("Maintext content @ recursiveParser = ", mainText.htmlText.length)
+			// trace("WARNING: Maintext content @ recursiveParser = ", mainText.htmlText.length)
 			return ret
 
 		}
